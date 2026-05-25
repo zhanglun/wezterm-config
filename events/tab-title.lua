@@ -498,7 +498,7 @@ function Tab:update_cells(event_opts, tab, hover, max_width)
       base_title = self.locked_title
    end
 
-   local title = create_title(process_name, base_title, max_width, inset)
+   local title = create_title(process_name, tostring(tab.tab_index + 1) .. ' ' .. base_title, max_width, inset)
 
    title_cells:update_segment_text(RS.title, title)
 
