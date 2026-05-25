@@ -42,6 +42,10 @@ return {
    command_palette_font_size = 12,
    command_palette_rows = 25,
 
+   -- window transparency and blur
+   window_background_opacity = 0.8,
+   macos_window_background_blur = 30,
+
    -- window
    window_padding = {
       left = 0,
