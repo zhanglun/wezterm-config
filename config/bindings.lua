@@ -55,8 +55,10 @@ local keys = {
    { key = 'Backspace',  mods = mod.SUPER,     action = act.SendString('\u{15}') },
 
    -- copy/paste --
-   { key = 'c',          mods = 'CTRL|SHIFT',  action = act.CopyTo('Clipboard') },
-   { key = 'v',          mods = 'CTRL|SHIFT',  action = act.PasteFrom('Clipboard') },
+--    { key = 'c',          mods = 'CTRL|SHIFT',  action = act.CopyTo('Clipboard') },
+--    { key = 'v',          mods = 'CTRL|SHIFT',  action = act.PasteFrom('Clipboard') },
+   { key = 'c',          mods = mod.SUPER,  action = act.CopyTo('Clipboard') },
+   { key = 'v',          mods = mod.SUPER,  action = act.PasteFrom('Clipboard') },
 
    { key = 'n',          mods = 'CTRL|SHIFT',  action = act.SendString('\u{2660}') },
    { key = 's',          mods = 'CTRL|SHIFT',  action = act.SendString('\u{203D}') },
@@ -73,12 +75,22 @@ local keys = {
    { key = '[',          mods = mod.SUPER_REV, action = act.MoveTabRelative(-1) },
    { key = ']',          mods = mod.SUPER_REV, action = act.MoveTabRelative(1) },
 
+   { key = '1',          mods = mod.SUPER,     action = act.ActivateTab(0) },
+   { key = '2',          mods = mod.SUPER,     action = act.ActivateTab(1) },
+   { key = '3',          mods = mod.SUPER,     action = act.ActivateTab(2) },
+   { key = '4',          mods = mod.SUPER,     action = act.ActivateTab(3) },
+   { key = '5',          mods = mod.SUPER,     action = act.ActivateTab(4) },
+   { key = '6',          mods = mod.SUPER,     action = act.ActivateTab(5) },
+   { key = '7',          mods = mod.SUPER,     action = act.ActivateTab(6) },
+   { key = '8',          mods = mod.SUPER,     action = act.ActivateTab(7) },
+   { key = '9',          mods = mod.SUPER,     action = act.ActivateTab(8) },
+
    -- tab: title
    { key = '0',          mods = mod.SUPER,     action = act.EmitEvent('tabs.manual-update-tab-title') },
    { key = '0',          mods = mod.SUPER_REV, action = act.EmitEvent('tabs.reset-tab-title') },
 
    -- tab: hide tab-bar
-   { key = '9',          mods = mod.SUPER,     action = act.EmitEvent('tabs.toggle-tab-bar'), },
+   -- { key = '9',          mods = mod.SUPER,     action = act.EmitEvent('tabs.toggle-tab-bar'), },
 
    -- window --
    -- window: spawn windows
@@ -187,7 +199,7 @@ local keys = {
 
    -- panes: zoom+close pane
    { key = 'Enter', mods = mod.SUPER,     action = act.TogglePaneZoomState },
-   { key = 'w',     mods = mod.SUPER,     action = act.CloseCurrentPane({ confirm = false }) },
+   { key = 'w',     mods = mod.SUPER,     action = act.CloseCurrentTab({ confirm = true }) },
 
    -- panes: navigation
    { key = 'k',     mods = mod.SUPER_REV, action = act.ActivatePaneDirection('Up') },
