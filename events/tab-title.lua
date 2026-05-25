@@ -57,8 +57,8 @@ local M = {}
 local PROGRESS_MIN_VERSION = 20250209
 local PROGRESS_STALE_AFTER = 30 -- seconds
 
-local ICON_SCIRCLE_LEFT = nf.ple_left_half_circle_thick --[[  ]]
-local ICON_SCIRCLE_RIGHT = nf.ple_right_half_circle_thick --[[  ]]
+local ICON_SCIRCLE_LEFT = nf.pl_left_hard_divider --[[  ]]
+local ICON_SCIRCLE_RIGHT = nf.pl_right_hard_divider --[[  ]]
 
 -- stylua: ignore
 ---@enum PrefixIcon
@@ -70,6 +70,23 @@ local ICON_PREFIX = {
    --  search = '🔭',
    launcher = nf.oct_rocket,          --[[  ]]
    edit     = nf.fa_edit,             --[[  ]]
+}
+
+
+-- stylua: ignore
+local ICON_PROCESS = {
+   nvim    = nf.dev_vim,
+   vim     = nf.dev_vim,
+   zsh     = nf.fa_terminal,
+   bash    = nf.fa_terminal,
+   fish    = nf.fa_terminal,
+   git     = nf.dev_git,
+   node    = nf.dev_nodejs_small,
+   python  = nf.dev_python,
+   python3 = nf.dev_python,
+   lua     = nf.seti_lua,
+   docker  = nf.dev_docker,
+   ssh     = nf.fa_terminal,
 }
 
 ---@enum UnseenOutputIcon
@@ -157,29 +174,33 @@ local RV = {
 ---@type table<string, Cells.SegmentColors>
 -- stylua: ignore
 local colors = {
-   text_default          = { bg = '#45475A', fg = '#1C1B19' },
-   text_hover            = { bg = '#7188b0', fg = '#1C1B19' },
-   text_active           = { bg = '#89b4fa', fg = '#11111B' },
+   text_default          = { bg = '#313244', fg = '#a6adc8' },
+   text_hover            = { bg = '#45475a', fg = '#cdd6f4' },
+   text_active           = { bg = '#cba6f7', fg = '#1e1e2e' },
 
-   unseen_output_default = { bg = '#45475A', fg = '#FFA066' },
-   unseen_output_hover   = { bg = '#7188b0', fg = '#FFA066' },
-   unseen_output_active  = { bg = '#89b4fa', fg = '#FFA066' },
+   unseen_output_default = { bg = '#313244', fg = '#fab387' },
+   unseen_output_hover   = { bg = '#45475a', fg = '#fab387' },
+   unseen_output_active  = { bg = '#cba6f7', fg = '#e64553' },
 
-   scircle_default       = { bg = 'rgba(0, 0, 0, 0.4)', fg = '#45475A' },
-   scircle_hover         = { bg = 'rgba(0, 0, 0, 0.4)', fg = '#7188b0' },
-   scircle_active        = { bg = 'rgba(0, 0, 0, 0.4)', fg = '#89b4fa' },
+   scircle_default       = { bg = '#090909', fg = '#313244' },
+   scircle_hover         = { bg = '#090909', fg = '#45475a' },
+   scircle_active        = { bg = '#090909', fg = '#cba6f7' },
 
-   progress_percentage_default    = { bg = '#45475A', fg = '#9df296' },
-   progress_percentage_hover      = { bg = '#7188b0', fg = '#9df296' },
-   progress_percentage_active     = { bg = '#89b4fa', fg = '#9df296' },
+   scircle_left_default  = { bg = '#313244', fg = '#090909' },
+   scircle_left_hover    = { bg = '#45475a', fg = '#090909' },
+   scircle_left_active   = { bg = '#cba6f7', fg = '#090909' },
 
-   progress_error_default         = { bg = '#45475A', fg = '#fa3970' },
-   progress_error_hover           = { bg = '#7188b0', fg = '#fa3970' },
-   progress_error_active          = { bg = '#89b4fa', fg = '#fa3970' },
+   progress_percentage_default    = { bg = '#313244', fg = '#a6e3a1' },
+   progress_percentage_hover      = { bg = '#45475a', fg = '#a6e3a1' },
+   progress_percentage_active     = { bg = '#cba6f7', fg = '#1e1e2e' },
 
-   progress_indeterminate_default = { bg = '#45475A', fg = '#f5e0dc' },
-   progress_indeterminate_hover   = { bg = '#7188b0', fg = '#f5e0dc' },
-   progress_indeterminate_active  = { bg = '#89b4fa', fg = '#f5e0dc' },
+   progress_error_default         = { bg = '#313244', fg = '#f38ba8' },
+   progress_error_hover           = { bg = '#45475a', fg = '#f38ba8' },
+   progress_error_active          = { bg = '#cba6f7', fg = '#1e1e2e' },
+
+   progress_indeterminate_default = { bg = '#313244', fg = '#f5c2e7' },
+   progress_indeterminate_hover   = { bg = '#45475a', fg = '#f5c2e7' },
+   progress_indeterminate_active  = { bg = '#cba6f7', fg = '#1e1e2e' },
 }
 
 ---
@@ -245,6 +266,11 @@ local function create_base_title(pane_title, process_name)
       base_title = base_title:gsub('InputLine: ', '')
    end
 
+   -- fallback: common process icons
+   if not prefix_icon and ICON_PROCESS[process_name] then
+      prefix_icon = ICON_PROCESS[process_name]
+   end
+
    return base_title, prefix_icon
 end
 
@@ -255,11 +281,7 @@ end
 local function create_title(process_name, base_title, max_width, inset)
    local title
 
-   if process_name:len() > 0 then
-      title = process_name .. ' ~ ' .. base_title
-   else
-      title = base_title
-   end
+   title = base_title  -- process context shown via icon
 
    if wezterm.column_width(title) > max_width - inset then
       local diff = wezterm.column_width(title) - max_width + inset
@@ -498,13 +520,22 @@ function Tab:update_cells(event_opts, tab, hover, max_width)
       base_title = self.locked_title
    end
 
-   local title = create_title(process_name, tostring(tab.tab_index + 1) .. ' ' .. base_title, max_width, inset)
+   -- Use basename for path-like titles; fall back to process name when title is unhelpful (e.g. hostname)
+   local short_base
+   if base_title:find('[/~]') then
+      short_base = base_title:match('([^/]+)$') or base_title
+   elseif process_name:len() > 0 then
+      short_base = process_name
+   else
+      short_base = base_title
+   end
+   local title = create_title(process_name, tostring(tab.tab_index + 1) .. ' ' .. short_base, max_width, inset)
 
    title_cells:update_segment_text(RS.title, title)
 
    -- stylua: ignore
    title_cells
-      :update_segment_colors(RS.scircle_left,   colors['scircle_' .. tab_state])
+      :update_segment_colors(RS.scircle_left,   colors['scircle_left_' .. tab_state])
       :update_segment_colors(RS.icon,           colors['text_' .. tab_state])
       :update_segment_colors(RS.title,          colors['text_' .. tab_state])
       :update_segment_colors(RS.unseen_output,  colors['unseen_output_' .. tab_state])
