@@ -4,6 +4,7 @@ return {
    automatically_reload_config = true,
    exit_behavior = 'CloseOnCleanExit', -- if the shell program exited with a successful status
    exit_behavior_messaging = 'Verbose',
+   skip_close_confirmation_for_processes_named = {},
    status_update_interval = 1000,
    audible_bell = 'Disabled',
 
