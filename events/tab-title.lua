@@ -294,6 +294,24 @@ local function create_title(process_name, base_title, max_width, inset)
    return title
 end
 
+---@param pane PaneInformation
+---@return string|nil
+local function get_current_folder_name(pane)
+   local cwd = pane.current_working_dir
+   local path = cwd and cwd.file_path
+
+   if not path or path == '' then
+      return nil
+   end
+
+   path = path:gsub('[/\\]+$', '')
+   if path == '' then
+      return '/'
+   end
+
+   return path:match('([^/\\]+)$') or path
+end
+
 local progress_stale = (function()
    -- stylua: ignore
    local status_score = {
@@ -520,10 +538,19 @@ function Tab:update_cells(event_opts, tab, hover, max_width)
       base_title = self.locked_title
    end
 
-   -- Use basename for path-like titles; fall back to process name when title is unhelpful (e.g. hostname)
+   -- Prefer the active pane's current folder; fall back to the existing title/process behavior.
    local short_base
-   if base_title:find('[/~]') then
-      short_base = base_title:match('([^/]+)$') or base_title
+   local can_use_current_folder = not self.title_locked
+      and prefix_icon ~= ICON_PREFIX.debug
+      and prefix_icon ~= ICON_PREFIX.launcher
+      and prefix_icon ~= ICON_PREFIX.select
+      and prefix_icon ~= ICON_PREFIX.edit
+   local current_folder = can_use_current_folder and get_current_folder_name(tab.active_pane)
+
+   if current_folder then
+      short_base = current_folder
+   elseif base_title:find('[/~]') then
+      short_base = base_title:match('([^/\\]+)$') or base_title
    elseif process_name:len() > 0 then
       short_base = process_name
    else
