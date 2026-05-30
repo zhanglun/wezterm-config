@@ -58,17 +58,20 @@ local colorscheme = {
       '#F2F2F2', -- white
    },
    tab_bar = {
-      background = 'rgba(0, 0, 0, 0.4)',
+      background = 'rgba(17, 17, 27, 0.6)',
+      -- bg_color must match tab-title.lua's text_{state} backgrounds so the
+      -- fancy tab's rounded fill blends seamlessly with the rendered content.
       active_tab = {
-         bg_color = mocha.surface2,
-         fg_color = mocha.text,
+         bg_color = mocha.mauve,
+         fg_color = mocha.crust,
+         intensity = 'Bold',
       },
       inactive_tab = {
          bg_color = mocha.surface0,
          fg_color = mocha.subtext1,
       },
       inactive_tab_hover = {
-         bg_color = mocha.surface0,
+         bg_color = mocha.surface1,
          fg_color = mocha.text,
       },
       new_tab = {
