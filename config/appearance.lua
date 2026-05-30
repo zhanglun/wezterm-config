@@ -1,6 +1,7 @@
 local gpu_adapters = require('utils.gpu-adapter')
 local backdrops = require('utils.backdrops')
 local colors = require('colors.custom')
+local fonts = require('config.fonts')
 
 ---@type Config
 return {
@@ -31,10 +32,16 @@ return {
    -- tab bar
    enable_tab_bar = true,
    hide_tab_bar_if_only_one_tab = false,
-   use_fancy_tab_bar = false,
-   tab_max_width = 23,
+   use_fancy_tab_bar = true,
+   tab_max_width = 28,
    show_tab_index_in_tab_bar = false,
    switch_to_last_active_tab_when_closing_tab = true,
+
+   -- integrate the window control buttons into the (fancy) tab bar and drop the
+   -- separate native title bar for a more compact, immersive look.
+   window_decorations = 'INTEGRATED_BUTTONS|RESIZE',
+   integrated_title_button_style = 'MacOsNative',
+   integrated_title_button_alignment = 'Left',
 
    -- command palette
    command_palette_fg_color = '#b4befe',
@@ -57,8 +64,10 @@ return {
    window_close_confirmation = 'AlwaysPrompt',
    window_frame = {
       active_titlebar_bg = '#090909',
-      -- font = fonts.font,
-      -- font_size = fonts.font_size,
+      -- fancy tab bar uses this font; must be a Nerd Font for the tab icons.
+      font = fonts.font,
+      -- tab bar height is driven by this size — bump it up/down to taste.
+      font_size = 13.0,
    },
    -- inactive_pane_hsb = {
    --    saturation = 0.9,
