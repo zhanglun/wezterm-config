@@ -183,6 +183,14 @@ local keys = {
          backdrops:toggle_focus(window)
       end)
    },
+   {
+      key = [[.]],
+      mods = mod.SUPER_REV,
+      action = wezterm.action_callback(function(window, _pane)
+         -- rescan backdrops/ to pick up newly added images, then show a random one
+         backdrops:scan_images_dir():random(window)
+      end),
+   },
 
    -- panes --
    -- panes: split panes
