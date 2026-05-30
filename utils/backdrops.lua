@@ -26,7 +26,7 @@ function BackDrops:init()
       current_idx = 1,
       images = {},
       images_dir = wezterm.config_dir .. '/backdrops/',
-      no_bg = false,
+      no_img = false,
    }
    return setmetatable(backdrops, self)
 end
@@ -68,7 +68,12 @@ function BackDrops:_gen_opts()
    if #self.images > 0 then
       table.insert(bg_opts, {
          source = { File = self.images[self.current_idx] },
+         -- scale to cover the whole window (like CSS object-fit: cover), crop overflow
+         width = 'Cover',
+         height = 'Cover',
          horizontal_align = 'Center',
+         -- dim the image itself (lower = darker); the color mask above still applies
+         hsb = { brightness = 0.5 },
       })
    end
 
