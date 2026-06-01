@@ -4,6 +4,7 @@ local platform = require('utils.platform')
 -- local font_family = 'Maple Mono NF'
 local font_family = 'JetBrainsMono Nerd Font'
 -- local font_family = 'UbuntuSansMono Nerd Font'
+-- local font_family = 'CartographCF Nerd Font'
 
 local font_size = platform.is_mac and 14 or 9.75
 
