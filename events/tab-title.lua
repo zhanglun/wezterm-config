@@ -57,8 +57,8 @@ local M = {}
 local PROGRESS_MIN_VERSION = 20250209
 local PROGRESS_STALE_AFTER = 30 -- seconds
 
-local ICON_SCIRCLE_LEFT = nf.pl_left_hard_divider --[[  ]]
-local ICON_SCIRCLE_RIGHT = nf.pl_right_hard_divider --[[  ]]
+local ICON_SCIRCLE_LEFT = nf.ple_left_half_circle_thick --[[  ]]
+local ICON_SCIRCLE_RIGHT = nf.ple_right_half_circle_thick --[[  ]]
 
 -- stylua: ignore
 ---@enum PrefixIcon
@@ -156,18 +156,21 @@ local RS = {
 -- stylua: ignore
 -- luacheck: ignore
 ---Render Variants
+-- NOTE: scircle (powerline half-circle) segments are intentionally omitted here:
+-- with the fancy tab bar, the tab's rounded background is drawn by WezTerm itself
+-- (colors.tab_bar), so we only render content + padding inside it.
 local RV = {
-   { RS.scircle_left, RS.padding, RS.title, RS.padding, RS.scircle_right },
-   { RS.scircle_left, RS.padding, RS.title, RS.padding, RS.unseen_output, RS.padding, RS.scircle_right },
+   { RS.padding, RS.title, RS.padding },
+   { RS.padding, RS.title, RS.padding, RS.unseen_output, RS.padding },
 
-   { RS.scircle_left, RS.padding, RS.title, RS.padding, RS.progress, RS.padding, RS.scircle_right },
-   { RS.scircle_left, RS.padding, RS.title, RS.padding, RS.progress, RS.padding, RS.unseen_output, RS.padding, RS.scircle_right },
+   { RS.padding, RS.title, RS.padding, RS.progress, RS.padding },
+   { RS.padding, RS.title, RS.padding, RS.progress, RS.padding, RS.unseen_output, RS.padding },
 
-   { RS.scircle_left, RS.padding, RS.icon, RS.padding, RS.title, RS.padding, RS.scircle_right },
-   { RS.scircle_left, RS.padding, RS.icon, RS.padding, RS.title, RS.padding, RS.unseen_output, RS.padding, RS.scircle_right },
+   { RS.padding, RS.icon, RS.padding, RS.title, RS.padding },
+   { RS.padding, RS.icon, RS.padding, RS.title, RS.padding, RS.unseen_output, RS.padding },
 
-   { RS.scircle_left, RS.padding, RS.icon, RS.padding, RS.title, RS.padding, RS.progress, RS.padding, RS.scircle_right },
-   { RS.scircle_left, RS.padding, RS.icon, RS.padding, RS.title, RS.padding, RS.progress, RS.padding, RS.unseen_output, RS.padding, RS.scircle_right },
+   { RS.padding, RS.icon, RS.padding, RS.title, RS.padding, RS.progress, RS.padding },
+   { RS.padding, RS.icon, RS.padding, RS.title, RS.padding, RS.progress, RS.padding, RS.unseen_output, RS.padding },
 }
 
 
@@ -186,9 +189,9 @@ local colors = {
    scircle_hover         = { bg = '#090909', fg = '#45475a' },
    scircle_active        = { bg = '#090909', fg = '#cba6f7' },
 
-   scircle_left_default  = { bg = '#313244', fg = '#090909' },
-   scircle_left_hover    = { bg = '#45475a', fg = '#090909' },
-   scircle_left_active   = { bg = '#cba6f7', fg = '#090909' },
+   scircle_left_default  = { bg = '#090909', fg = '#313244' },
+   scircle_left_hover    = { bg = '#090909', fg = '#45475a' },
+   scircle_left_active   = { bg = '#090909', fg = '#cba6f7' },
 
    progress_percentage_default    = { bg = '#313244', fg = '#a6e3a1' },
    progress_percentage_hover      = { bg = '#45475a', fg = '#a6e3a1' },
@@ -202,6 +205,41 @@ local colors = {
    progress_indeterminate_hover   = { bg = '#45475a', fg = '#f5c2e7' },
    progress_indeterminate_active  = { bg = '#cba6f7', fg = '#1e1e2e' },
 }
+
+-- Catppuccin Mocha accents used to tint inactive tabs so several tabs are easy
+-- to tell apart at a glance. `mauve` is intentionally omitted: it is reserved
+-- for the active tab's highlight.
+-- stylua: ignore
+local TAB_ACCENTS = {
+   '#89b4fa', -- blue
+   '#a6e3a1', -- green
+   '#f9e2af', -- yellow
+   '#94e2d5', -- teal
+   '#fab387', -- peach
+   '#f5c2e7', -- pink
+   '#89dceb', -- sky
+   '#b4befe', -- lavender
+   '#eba0ac', -- maroon
+   '#74c7ec', -- sapphire
+}
+
+---Stable djb2 hash so a given label always maps to the same accent color.
+---@param s string
+---@return integer
+local function hash_label(s)
+   local h = 5381
+   for i = 1, #s do
+      h = (h * 33 + s:byte(i)) % 2147483648
+   end
+   return h
+end
+
+---Pick a stable accent color for a tab label.
+---@param label string
+---@return string `#rrggbb`
+local function accent_for(label)
+   return TAB_ACCENTS[(hash_label(label) % #TAB_ACCENTS) + 1]
+end
 
 ---
 -- ================
@@ -560,11 +598,20 @@ function Tab:update_cells(event_opts, tab, hover, max_width)
 
    title_cells:update_segment_text(RS.title, title)
 
+   -- Tint inactive tabs by a stable accent hashed from their label; the active
+   -- tab keeps the default mauve highlight. Only the foreground changes, so the
+   -- powerline background/dividers are untouched.
+   local base_text = colors['text_' .. tab_state]
+   local text_colors = base_text
+   if tab_state ~= 'active' then
+      text_colors = { bg = base_text.bg, fg = accent_for(short_base) }
+   end
+
    -- stylua: ignore
    title_cells
       :update_segment_colors(RS.scircle_left,   colors['scircle_left_' .. tab_state])
-      :update_segment_colors(RS.icon,           colors['text_' .. tab_state])
-      :update_segment_colors(RS.title,          colors['text_' .. tab_state])
+      :update_segment_colors(RS.icon,           text_colors)
+      :update_segment_colors(RS.title,          text_colors)
       :update_segment_colors(RS.unseen_output,  colors['unseen_output_' .. tab_state])
       :update_segment_colors(RS.padding,        colors['text_' .. tab_state])
       :update_segment_colors(RS.scircle_right,  colors['scircle_' .. tab_state])
