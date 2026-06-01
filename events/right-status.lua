@@ -78,6 +78,7 @@ cells
    :add_segment('sep_battery', ' ' .. ICON_SEPARATOR .. '  ', colors.separator)
    :add_segment('battery_icon', '', colors.battery)
    :add_segment('battery_text', '', colors.battery, attr(attr.intensity('Bold')))
+   :add_segment('right_pad', '  ', { fg = '#000000', bg = 'rgba(0, 0, 0, 0)' })
 
 ---@param value any
 ---@return boolean
@@ -198,6 +199,7 @@ M.setup = function(opts)
          table.insert(segments, 'battery_text')
       end
 
+      table.insert(segments, 'right_pad')
       window:set_right_status(wezterm.format(cells:render(segments)))
    end)
 end
