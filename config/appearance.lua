@@ -27,7 +27,7 @@ return {
    background = backdrops:initial_options({ no_img = false }),
 
    -- scrollbar
-   enable_scroll_bar = true,
+   enable_scroll_bar = false,
 
    -- tab bar
    enable_tab_bar = true,
