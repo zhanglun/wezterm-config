@@ -68,10 +68,10 @@ function BackDrops:_gen_opts()
    if #self.images > 0 then
       table.insert(bg_opts, {
          source = { File = self.images[self.current_idx] },
-         -- scale to cover the whole window (like CSS object-fit: cover), crop overflow
          width = 'Cover',
          height = 'Cover',
          horizontal_align = 'Center',
+         vertical_align = 'Middle',
          -- dim the image itself (lower = darker); the color mask above still applies
          hsb = { brightness = 0.5 },
       })
