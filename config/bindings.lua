@@ -162,19 +162,25 @@ local keys = {
    {
       key = [[/]],
       mods = mod.SUPER_REV,
-      action = act.InputSelector({
-         title = 'InputSelector: Select Background',
-         choices = backdrops:choices(),
-         fuzzy = true,
-         fuzzy_description = 'Select Background: ',
-         action = wezterm.action_callback(function(window, _pane, idx)
-            if not idx then
-               return
-            end
-            ---@diagnostic disable-next-line: param-type-mismatch
-            backdrops:set_img(window, tonumber(idx))
-         end),
-      }),
+      action = wezterm.action_callback(function(window, pane)
+         backdrops:scan_images_dir()
+         window:perform_action(
+            act.InputSelector({
+               title = 'InputSelector: Select Background',
+               choices = backdrops:choices(),
+               fuzzy = true,
+               fuzzy_description = 'Select Background: ',
+               action = wezterm.action_callback(function(win, _pane, idx)
+                  if not idx then
+                     return
+                  end
+                  ---@diagnostic disable-next-line: param-type-mismatch
+                  backdrops:set_img(win, tonumber(idx))
+               end),
+            }),
+            pane
+         )
+      end),
    },
    {
       key = 'b',
