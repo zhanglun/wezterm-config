@@ -40,7 +40,7 @@ return {
    -- integrate the window control buttons into the (fancy) tab bar and drop the
    -- separate native title bar for a more compact, immersive look.
    window_decorations = 'INTEGRATED_BUTTONS|RESIZE',
-   integrated_title_button_style = 'MacOsNative',
+   integrated_title_button_style = 'Windows',
    integrated_title_button_alignment = 'Left',
 
    -- command palette

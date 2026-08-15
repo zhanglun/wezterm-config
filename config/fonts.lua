@@ -5,14 +5,14 @@ local platform = require('utils.platform')
 local font_family = 'UbuntuSansMono Nerd Font'
 -- local font_family = 'CartographCF Nerd Font'
 
-local font_size = platform.is_mac and 15 or 9.75
+local font_size = platform.is_mac and 15 or 15
 
 local font
 if platform.is_linux then
    -- Keep WezTerm's default Latin font and use a CJK monospace fallback.
    font = wezterm.font_with_fallback {
-      { family = 'JetBrains Mono', weight = 'Medium' },
-      { family = 'Sarasa Mono SC', weight = 'Medium' },
+      { family = 'Ubuntu Sans Mono' },
+      { family = 'Noto Sans Mono CJK SC' },
    }
 else
    font = wezterm.font({ family = font_family, weight = 'Medium' })
