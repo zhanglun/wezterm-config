@@ -1,7 +1,7 @@
 # pi 跨设备配置同步指南
 
 > 在新设备上让 pi 阅读此文件，按照下面的步骤操作即可完成配置同步。
-> 本文件记录的是基准配置（来源：Ubuntu 主力机，2025-08-15）。
+> 本文件记录的是跨设备同步基准。插件清单以本机当前安装状态为准（2026-08-17）；其余旧配置须按本机实际情况合并。
 
 ## 操作步骤
 
@@ -24,20 +24,32 @@ mkdir -p ~/.pi/agent/themes ~/.pi/agent/skills ~/.pi/agent/extensions
   "transport": "sse",
   "httpProxy": "http://127.0.0.1:7897",
   "packages": [
-    "npm:@calesennett/pi-codex-usage",
-    "npm:pi-web-access",
-    "npm:pi-simplify",
     "npm:awesome-pi-themes",
-    "npm:@odinlayer/pi-statusbar",
+    "npm:pi-rose-pine",
+    "npm:pi-simplify",
+    "npm:pi-lens",
+    "npm:pi-chrome",
+    "npm:pi-markdown-preview",
+    "npm:pi-subagents",
+    "npm:pi-web-access",
+    "npm:pi-execution-time",
+    "npm:pi-powerline-footer",
+    "npm:pi-chrome-dev-tools",
     "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@narumitw/pi-plan-mode",
     "npm:@narumitw/pi-goal"
-  ],
-  "pi-codex-usage": { "usageMode": "used" }
+  ]
 }
 ```
 
 **注意**：如果此文件已存在，保留 `lastChangelogVersion` 字段，合并其余内容而非覆盖。
+
+本机插件按用途分组如下：
+
+- 主题：`awesome-pi-themes`、`pi-rose-pine`
+- 工作流与质量：`pi-simplify`、`pi-lens`、`pi-subagents`、`pi-plan-mode`、`pi-goal`、`rpiv-ask-user-question`
+- Web 与浏览器：`pi-web-access`、`pi-chrome`、`pi-chrome-dev-tools`、`pi-markdown-preview`
+- 状态栏与计时：`pi-execution-time`、`pi-powerline-footer`
 
 ### 3. 注册自定义模型 `~/.pi/agent/models-store.json`
 
@@ -95,7 +107,14 @@ curl -fsSL https://raw.githubusercontent.com/dracula/pi-coding-agent/main/dracul
 
 ### 6. 恢复扩展
 
-- `deepseek-balance.ts` → `~/.pi/agent/extensions/`（自定义扩展，从旧设备拷贝，无上游）
+将以下文件或目录从旧设备整体拷贝到 `~/.pi/agent/extensions/`：
+
+- `deepseek-balance.ts` — DeepSeek 余额扩展（自定义，无上游）
+- `deepseek-usage.ts` — DeepSeek 余额、调用 token 与费用状态栏；依赖当前设备的 DeepSeek 认证
+- `working-timer.ts` — 在 TUI 工作提示中显示当前 agent 的已运行时长
+- `subagent/` — `pi-subagents` 的本地配置目录；需同时安装上方 packages 中的 `npm:pi-subagents`
+
+`subagent/config.json` 包含并发、工作树目录与子代理限制等本机工作流参数，应随目录一并同步。
 
 ### 7. 登录认证
 
@@ -119,7 +138,7 @@ pi auth login
 | `~/.pi/agent/sessions/` | 会话历史，设备本地 |
 | `~/.pi/agent/npm/` | packages 自动安装 |
 | `~/.pi/agent/bin/` | 平台相关二进制 |
-| `deepseek-balance.json` 等缓存 | 运行时缓存 |
+| `deepseek-balance.json`、`deepseek-usage.json` 等缓存 | 运行时缓存 |
 
 ## 验证清单
 
