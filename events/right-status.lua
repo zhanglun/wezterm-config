@@ -1,29 +1,12 @@
 local wezterm = require('wezterm')
 local umath = require('utils.math')
 local Cells = require('utils.cells')
-local OptsValidator = require('utils.opts-validator')
-
 local nf = wezterm.nerdfonts
 local attr = Cells.attr
-
----@alias Event.RightStatusOptionsInput { date_format?: string }
-
----@alias Event.RightStatusOptions { date_format: string }
-
----Setup options for the right status bar
----@type OptsValidator
-local EVENT_OPTS = OptsValidator:new({
-   {
-      name = 'date_format',
-      type = 'string',
-      default = '%a %H:%M:%S',
-   },
-})
 
 local M = {}
 
 local ICON_SEPARATOR = nf.oct_dash
-local ICON_DATE = nf.fa_calendar
 local ICON_CWD = nf.oct_file_directory
 local ICON_GIT = nf.oct_git_branch
 
@@ -57,7 +40,6 @@ local charging_icons = {
 ---@type table<string, Cells.SegmentColors>
 -- stylua: ignore
 local colors = {
-   date      = { fg = '#fab387', bg = 'rgba(0, 0, 0, 0.4)' },
    battery   = { fg = '#f9e2af', bg = 'rgba(0, 0, 0, 0.4)' },
    cwd       = { fg = '#a6e3a1', bg = 'rgba(0, 0, 0, 0.4)' },
    git       = { fg = '#cba6f7', bg = 'rgba(0, 0, 0, 0.4)' },
@@ -67,8 +49,6 @@ local colors = {
 local cells = Cells:new()
 
 cells
-   :add_segment('date_icon', ICON_DATE .. '  ', colors.date, attr(attr.intensity('Bold')))
-   :add_segment('date_text', '', colors.date, attr(attr.intensity('Bold')))
    :add_segment('sep_cwd', ' ' .. ICON_SEPARATOR .. '  ', colors.separator)
    :add_segment('cwd_icon', ICON_CWD .. '  ', colors.cwd, attr(attr.intensity('Bold')))
    :add_segment('cwd_text', '', colors.cwd, attr(attr.intensity('Bold')))
@@ -158,28 +138,18 @@ local function cwd_and_branch(pane)
    return display, branch
 end
 
----@param opts? Event.RightStatusOptionsInput Default: {date_format = '%a %H:%M:%S'}
-M.setup = function(opts)
-   local valid_opts, err = EVENT_OPTS:validate(opts or {})
-
-   if err then
-      wezterm.log_error(err)
-   end
-
-   ---@cast valid_opts Event.RightStatusOptions
-
+M.setup = function()
    wezterm.on('update-status', function(window, pane)
       local battery_text, battery_icon = battery_info()
       local cwd, git_branch = cwd_and_branch(pane)
 
       cells
-         :update_segment_text('date_text', wezterm.strftime(valid_opts.date_format))
          :update_segment_text('cwd_text', cwd)
          :update_segment_text('git_text', git_branch)
          :update_segment_text('battery_icon', battery_icon)
          :update_segment_text('battery_text', battery_text)
 
-      local segments = { 'date_icon', 'date_text' }
+      local segments = {}
 
       if cwd ~= '' then
          table.insert(segments, 'sep_cwd')
