@@ -67,7 +67,7 @@ return {
       -- fancy tab bar uses this font; must be a Nerd Font for the tab icons.
       font = fonts.font,
       -- tab bar height is driven by this size — bump it up/down to taste.
-      font_size = 13.0,
+      font_size = 15.0,
    },
    -- inactive_pane_hsb = {
    --    saturation = 0.9,
