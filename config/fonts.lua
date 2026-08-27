@@ -9,13 +9,17 @@ local font_size = platform.is_mac and 15 or 15
 
 local font
 if platform.is_linux then
-   -- Keep WezTerm's default Latin font and use a CJK monospace fallback.
-   font = wezterm.font_with_fallback {
+   -- Keep a CJK fallback for systems without LXGW WenKai Mono.
+   font = wezterm.font_with_fallback({
+      { family = 'LXGW WenKai Mono' },
       { family = 'Ubuntu Sans Mono' },
       { family = 'Noto Sans Mono CJK SC' },
-   }
+   })
 else
-   font = wezterm.font({ family = font_family, weight = 'Medium' })
+   font = wezterm.font_with_fallback({
+      { family = 'LXGW WenKai Mono' },
+      { family = font_family, weight = 'Medium' },
+   })
 end
 
 ---@type Config
