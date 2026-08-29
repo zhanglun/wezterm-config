@@ -1,5 +1,4 @@
 local wezterm = require('wezterm')
-local umath = require('utils.math')
 local Cells = require('utils.cells')
 local nf = wezterm.nerdfonts
 local attr = Cells.attr
@@ -10,37 +9,9 @@ local ICON_SEPARATOR = nf.oct_dash
 local ICON_CWD = nf.oct_file_directory
 local ICON_GIT = nf.oct_git_branch
 
----@type string[]
-local discharging_icons = {
-   nf.md_battery_10,
-   nf.md_battery_20,
-   nf.md_battery_30,
-   nf.md_battery_40,
-   nf.md_battery_50,
-   nf.md_battery_60,
-   nf.md_battery_70,
-   nf.md_battery_80,
-   nf.md_battery_90,
-   nf.md_battery,
-}
----@type string[]
-local charging_icons = {
-   nf.md_battery_charging_10,
-   nf.md_battery_charging_20,
-   nf.md_battery_charging_30,
-   nf.md_battery_charging_40,
-   nf.md_battery_charging_50,
-   nf.md_battery_charging_60,
-   nf.md_battery_charging_70,
-   nf.md_battery_charging_80,
-   nf.md_battery_charging_90,
-   nf.md_battery_charging,
-}
-
 ---@type table<string, Cells.SegmentColors>
 -- stylua: ignore
 local colors = {
-   battery   = { fg = '#f9e2af', bg = 'rgba(0, 0, 0, 0.4)' },
    cwd       = { fg = '#a6e3a1', bg = 'rgba(0, 0, 0, 0.4)' },
    git       = { fg = '#cba6f7', bg = 'rgba(0, 0, 0, 0.4)' },
    separator = { fg = '#74c7ec', bg = 'rgba(0, 0, 0, 0.4)' },
@@ -55,46 +26,7 @@ cells
    :add_segment('sep_git', ' ' .. ICON_SEPARATOR .. '  ', colors.separator)
    :add_segment('git_icon', ICON_GIT .. '  ', colors.git, attr(attr.intensity('Bold')))
    :add_segment('git_text', '', colors.git, attr(attr.intensity('Bold')))
-   :add_segment('sep_battery', ' ' .. ICON_SEPARATOR .. '  ', colors.separator)
-   :add_segment('battery_icon', '', colors.battery)
-   :add_segment('battery_text', '', colors.battery, attr(attr.intensity('Bold')))
    :add_segment('right_pad', '  ', { fg = '#000000', bg = 'rgba(0, 0, 0, 0)' })
-
----@param value any
----@return boolean
-local function is_valid_charge(value)
-   return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
-end
-
----@return string, string
-local function battery_info()
-   local charge = ''
-   local icon = ''
-
-   local ok, batteries = pcall(wezterm.battery_info)
-   if not ok or not batteries then
-      return charge, icon
-   end
-
-   for _, b in ipairs(batteries) do
-      if is_valid_charge(b.state_of_charge) then
-         local idx = umath.clamp(umath.round(b.state_of_charge * 10), 1, 10)
-         charge = string.format('%.0f%%', b.state_of_charge * 100)
-
-         if b.state == 'Charging' then
-            icon = charging_icons[idx] or ''
-         else
-            icon = discharging_icons[idx] or ''
-         end
-
-         if icon ~= '' then
-            break
-         end
-      end
-   end
-
-   return charge, icon == '' and '' or icon .. ' '
-end
 
 -- Cache git branch per pane to avoid spawning a process on every tick
 ---@type table<number, {path: string, branch: string}>
@@ -140,14 +72,11 @@ end
 
 M.setup = function()
    wezterm.on('update-status', function(window, pane)
-      local battery_text, battery_icon = battery_info()
       local cwd, git_branch = cwd_and_branch(pane)
 
       cells
          :update_segment_text('cwd_text', cwd)
          :update_segment_text('git_text', git_branch)
-         :update_segment_text('battery_icon', battery_icon)
-         :update_segment_text('battery_text', battery_text)
 
       local segments = {}
 
@@ -161,12 +90,6 @@ M.setup = function()
          table.insert(segments, 'sep_git')
          table.insert(segments, 'git_icon')
          table.insert(segments, 'git_text')
-      end
-
-      if battery_icon ~= '' or battery_text ~= '' then
-         table.insert(segments, 'sep_battery')
-         table.insert(segments, 'battery_icon')
-         table.insert(segments, 'battery_text')
       end
 
       table.insert(segments, 'right_pad')
