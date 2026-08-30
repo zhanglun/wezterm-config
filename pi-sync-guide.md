@@ -1,7 +1,7 @@
 # pi 跨设备配置同步指南
 
 > 在新设备上让 pi 阅读此文件，按照下面的步骤操作即可完成配置同步。
-> 本文件记录的是跨设备同步基准。插件清单以本机当前安装状态为准（2026-08-17）；其余旧配置须按本机实际情况合并。
+> 本文件记录的是跨设备同步基准。插件清单以本机当前安装状态为准（2026-08-30）；其余旧配置须按本机实际情况合并。
 
 ## 操作步骤
 
@@ -24,10 +24,7 @@ mkdir -p ~/.pi/agent/themes ~/.pi/agent/skills ~/.pi/agent/extensions
   "transport": "sse",
   "httpProxy": "http://127.0.0.1:7897",
   "packages": [
-    "npm:awesome-pi-themes",
-    "npm:pi-rose-pine",
     "npm:pi-simplify",
-    "npm:pi-lens",
     "npm:pi-chrome",
     "npm:pi-markdown-preview",
     "npm:pi-subagents",
@@ -36,8 +33,11 @@ mkdir -p ~/.pi/agent/themes ~/.pi/agent/skills ~/.pi/agent/extensions
     "npm:pi-powerline-footer",
     "npm:pi-chrome-dev-tools",
     "npm:@juicesharp/rpiv-ask-user-question",
-    "npm:@narumitw/pi-plan-mode",
-    "npm:@narumitw/pi-goal"
+    "npm:@narumitw/pi-goal",
+    "npm:pi-mcp-adapter",
+    "npm:@dietrichgebert/ponytail",
+    "npm:@fradser/pi-monitor",
+    "npm:@ff-labs/pi-fff"
   ]
 }
 ```
@@ -46,10 +46,11 @@ mkdir -p ~/.pi/agent/themes ~/.pi/agent/skills ~/.pi/agent/extensions
 
 本机插件按用途分组如下：
 
-- 主题：`awesome-pi-themes`、`pi-rose-pine`
-- 工作流与质量：`pi-simplify`、`pi-lens`、`pi-subagents`、`pi-plan-mode`、`pi-goal`、`rpiv-ask-user-question`
+- 工作流与质量：`pi-simplify`、`pi-subagents`、`pi-goal`、`rpiv-ask-user-question`、`ponytail`
+- MCP 与搜索：`pi-mcp-adapter`、`pi-fff`
 - Web 与浏览器：`pi-web-access`、`pi-chrome`、`pi-chrome-dev-tools`、`pi-markdown-preview`
 - 状态栏与计时：`pi-execution-time`、`pi-powerline-footer`
+- 运行监控：`pi-monitor`
 
 ### 3. 注册自定义模型 `~/.pi/agent/models-store.json`
 
