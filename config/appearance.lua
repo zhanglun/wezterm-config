@@ -4,14 +4,15 @@ local fonts = require('config.fonts')
 
 ---@type Config
 return {
-   max_fps = 120,
-   front_end = 'WebGpu', ---@type 'WebGpu' | 'OpenGL' | 'Software'
-   webgpu_power_preference = 'HighPerformance',
+   -- OpenGL avoids the WebGPU/Metal surface recovery path after macOS wake.
+   max_fps = 60,
+   front_end = 'OpenGL', ---@type 'WebGpu' | 'OpenGL' | 'Software'
+   webgpu_power_preference = 'LowPower',
    -- Leave webgpu_preferred_adapter unset so wgpu selects the adapter.
    underline_thickness = '1.5pt',
 
    -- cursor
-   animation_fps = 120,
+   animation_fps = 60,
    cursor_blink_ease_in = 'EaseOut',
    cursor_blink_ease_out = 'EaseOut',
    default_cursor_style = 'BlinkingBlock',
@@ -47,8 +48,9 @@ return {
    command_palette_rows = 25,
 
    -- window transparency and blur
-   window_background_opacity = 0.8,
-   macos_window_background_blur = 30,
+   -- Keep the backdrop, but avoid transparent-window and blur compositing on wake.
+   window_background_opacity = 1.0,
+   macos_window_background_blur = 0,
 
    -- window
    window_padding = {
