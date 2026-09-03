@@ -4,9 +4,9 @@ local fonts = require('config.fonts')
 
 ---@type Config
 return {
-   -- OpenGL avoids the WebGPU/Metal surface recovery path after macOS wake.
+   -- WebGPU avoids the macOS OpenGL surface path that can hang after unlock.
    max_fps = 60,
-   front_end = 'OpenGL', ---@type 'WebGpu' | 'OpenGL' | 'Software'
+   front_end = 'WebGpu', ---@type 'WebGpu' | 'OpenGL' | 'Software'
    webgpu_power_preference = 'LowPower',
    -- Leave webgpu_preferred_adapter unset so wgpu selects the adapter.
    underline_thickness = '1.5pt',
