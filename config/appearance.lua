@@ -54,10 +54,10 @@ return {
 
    -- window
    window_padding = {
-      left = 0,
-      right = 0,
-      top = 10,
-      bottom = 7.5,
+      left = 16,
+      right = 16,
+      top = 12,
+      bottom = 12,
    },
    adjust_window_size_when_changing_font_size = false,
    window_close_confirmation = 'AlwaysPrompt',
