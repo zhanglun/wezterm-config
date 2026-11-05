@@ -1,25 +1,124 @@
 # pi 跨设备配置同步指南
 
-> 在新设备上让 pi 阅读此文件，按照下面的步骤操作即可完成配置同步。
-> 本文件记录的是本机当前同步基准（2026-08-31）。插件清单、默认模型和扩展清单以本机当前状态为准；其余配置须按目标设备实际情况合并。
+> 在新设备上让 pi 阅读此文件，并**以本机配置为准覆盖目标设备的 pi 配置**。
+> 本基准采集于 **2026-11-05**，本机 pi CLI 为 **1.4.0**。
+>
+> 覆盖前请确认目标设备不需要保留自己的 pi 设置。`auth.json`、`models.json` 中的密钥、会话和缓存不在同步范围内，必须按目标设备重新配置。
 
-## 操作步骤
+## 1. 本机基线
 
-### 1. 创建目录结构
+| 项目 | 本机值 |
+|---|---|
+| pi CLI | `1.4.0` |
+| Node.js | `v24.15.0` |
+| 配置目录 | `~/.pi/agent/` |
+| 主题 | `dracula` |
+| 默认 provider | `custom-openai` |
+| 默认模型 | `gpt-5.6-terra` |
+| 默认思考级别 | `high` |
+| 外部编辑器 | `zed --wait` |
+| TUI 模式 | `regular` |
 
-```bash
-mkdir -p ~/.pi/agent/themes ~/.pi/agent/skills ~/.pi/agent/extensions
-```
+## 2. 覆盖同步原则
 
-### 2. 写入主配置 `~/.pi/agent/settings.json`
+在目标设备执行同步时，按以下原则处理：
+
+- `settings.json`：用本机版本**覆盖**目标设备版本；
+- `extensions/`：用本机确认存在的扩展**覆盖/补齐**目标目录；
+- `themes/dracula.json`：用本机 Dracula 主题**覆盖**目标文件；
+- `extensions/subagent/config.json`、`pi-statusline.json`、`subagents.json`：用本机版本**覆盖**目标文件；
+- npm 包：按本指南的 package 清单重新安装/更新，以本机版本为准；
+- `models.json`：只复制脱敏后的 provider/model 定义，密钥在目标设备重新填写；
+- `auth.json`、会话、缓存、平台二进制：**禁止覆盖同步**。
+
+如果目标设备有需要保留的设置，应先备份；本指南默认不合并目标设备配置。
+
+## 3. 覆盖 `~/.pi/agent/settings.json`
+
+将以下内容作为目标设备的完整 `~/.pi/agent/settings.json`。其中本机的 retry、terminal、subagents、powerline 等设置也属于覆盖基准，不要再与目标设备版本合并。
 
 ```json
 {
+  "lastChangelogVersion": "1.4.0",
   "theme": "dracula",
+  "externalEditor": "zed --wait",
   "defaultProvider": "custom-openai",
   "defaultModel": "gpt-5.6-terra",
   "defaultThinkingLevel": "high",
-  "externalEditor": "zed --wait",
+  "retry": {
+    "enabled": true,
+    "maxRetries": 4,
+    "baseDelayMs": 2000,
+    "provider": {
+      "maxRetries": 0,
+      "maxRetryDelayMs": 60000
+    }
+  },
+  "terminal": {
+    "showTerminalProgress": true
+  },
+  "subagents": {
+    "defaultModel": "custom-openai/gpt-5.6-luna",
+    "defaultThinking": "low",
+    "agentOverrides": {
+      "scout": {
+        "model": "custom-openai/gpt-5.6-luna",
+        "thinking": "low",
+        "defaultContext": "fresh",
+        "acceptanceRole": "read-only"
+      },
+      "researcher": {
+        "model": "custom-openai/gpt-5.6-luna",
+        "thinking": "low",
+        "defaultContext": "fresh",
+        "acceptanceRole": "read-only"
+      },
+      "context-builder": {
+        "model": "custom-openai/gpt-5.6-terra",
+        "thinking": "medium",
+        "defaultContext": "fresh",
+        "acceptanceRole": "read-only"
+      },
+      "planner": {
+        "model": "custom-openai/gpt-5.6-terra",
+        "thinking": "medium",
+        "defaultContext": "fork",
+        "acceptanceRole": "read-only"
+      },
+      "oracle": {
+        "model": "custom-openai/gpt-5.6-sol",
+        "thinking": "high",
+        "defaultContext": "fork",
+        "acceptanceRole": "read-only"
+      },
+      "advisor": {
+        "model": "custom-openai/gpt-5.6-sol",
+        "thinking": "high",
+        "defaultContext": "fork",
+        "acceptanceRole": "read-only"
+      },
+      "reviewer": {
+        "model": "custom-openai/gpt-5.6-sol",
+        "thinking": "high",
+        "defaultContext": "fresh",
+        "acceptanceRole": "read-only"
+      },
+      "worker": {
+        "model": "custom-openai/gpt-5.6-sol",
+        "thinking": "medium",
+        "defaultContext": "fork",
+        "acceptanceRole": "writer"
+      },
+      "delegate": {
+        "model": "custom-openai/gpt-5.6-luna",
+        "thinking": "low",
+        "defaultContext": "fresh"
+      }
+    }
+  },
+  "powerline": {
+    "separator": "dot"
+  },
   "packages": [
     "npm:pi-simplify",
     "npm:pi-chrome",
@@ -35,141 +134,204 @@ mkdir -p ~/.pi/agent/themes ~/.pi/agent/skills ~/.pi/agent/extensions
     "npm:pi-mcp-adapter",
     "npm:@dietrichgebert/ponytail",
     "npm:@fradser/pi-monitor",
-    "npm:@ff-labs/pi-fff"
-  ]
+    "npm:@ff-labs/pi-fff",
+    "extensions/zcode-bigmodel-oauth.ts",
+    "npm:@plannotator/pi-extension"
+  ],
+  "extensions": [
+    "-builtin:mcp"
+  ],
+  "tuiMode": "regular"
 }
 ```
 
-> 这是需要合并的关键字段示例，不是完整覆盖模板。保留目标设备已有的 `lastChangelogVersion`、重试、终端、subagents 等本地配置；`../../Documents/mine/pi-pet` 是本机路径，跨设备需单独克隆/调整。
+注意：
 
-**注意**：如果此文件已存在，保留 `lastChangelogVersion` 字段，合并其余内容而非覆盖。
+- `../../Documents/mine/pi-pet` 是本机路径依赖。目标设备需将 pi-pet 克隆到对应路径；不需要时从 `packages` 中删除；
+- `extensions/zcode-bigmodel-oauth.ts` 是本机扩展文件路径，必须同时复制文件；
+- `lastChangelogVersion` 也按本机值覆盖，不保留目标设备旧值。
 
-本机插件按用途分组如下（截至 2026-08-31）：
+## 4. 覆盖并安装 npm 包
 
-- 工作流与质量：`pi-simplify`、`pi-subagents`、`pi-goal`、`rpiv-ask-user-question`、`ponytail`
-- MCP 与搜索：`pi-mcp-adapter`、`pi-fff`
-- Web 与浏览器：`pi-web-access`、`pi-chrome`、`pi-chrome-dev-tools`、`pi-markdown-preview`
-- 状态栏、计时与监控：`pi-execution-time`、`pi-powerline-footer`、`pi-monitor`
-- 本地项目包：`pi-pet`（路径依赖，不属于 npm 包）
+本机 `~/.pi/agent/npm/package.json` 的直接依赖及版本如下：
 
-本次升级后的 npm 版本：
-
-| 包 | 版本 |
+| 包 | 本机版本 |
 |---|---:|
 | `pi-simplify` | `0.2.3` |
-| `pi-chrome` | `0.15.46` |
-| `pi-markdown-preview` | `0.16.0` |
-| `pi-subagents` | `0.61.0` |
-| `pi-web-access` | `0.27.0` |
-| `pi-execution-time` | `0.2.0` |
-| `pi-powerline-footer` | `0.16.0` |
+| `pi-chrome` | `0.15.57` |
+| `pi-markdown-preview` | `0.26.4` |
+| `pi-subagents` | `0.84.0` |
+| `pi-web-access` | `0.47.0` |
+| `pi-execution-time` | `0.3.0` |
+| `pi-powerline-footer` | `0.22.0` |
 | `pi-chrome-dev-tools` | `0.1.0` |
-| `@juicesharp/rpiv-ask-user-question` | `2.8.0` |
-| `@narumitw/pi-goal` | `0.54.4` |
-| `pi-mcp-adapter` | `2.31.0` |
-| `@dietrichgebert/ponytail` | `4.9.0` |
-| `@fradser/pi-monitor` | `2.1.0` |
-| `@ff-labs/pi-fff` | `0.10.6` |
+| `@juicesharp/rpiv-ask-user-question` | `2.15.0` |
+| `@narumitw/pi-goal` | `0.54.15` |
+| `pi-mcp-adapter` | `7.0.1` |
+| `@dietrichgebert/ponytail` | `5.3.3` |
+| `@fradser/pi-monitor` | `2.3.1` |
+| `@ff-labs/pi-fff` | `0.11.0` |
+| `@plannotator/pi-extension` | `0.28.49` |
 
-### 3. 注册自定义模型 `~/.pi/agent/models.json`
+在目标设备覆盖 `settings.json` 后执行：
 
-本机默认使用 `custom-openai`，需要在目标设备按实际 API 网关配置 provider 和模型。不要复制包含密钥的完整文件；建议手动合并结构，密钥通过环境变量或目标 provider 支持的认证方式配置。示例：
-
-```json
-{
-  "zai-coding-cn": {
-    "models": [
-      {
-        "id": "glm-4.7",
-        "name": "GLM-4.7",
-        "api": "openai-completions",
-        "provider": "zai-coding-cn",
-        "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4",
-        "reasoning": true,
-        "input": ["text"],
-        "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-        "compat": {
-          "supportsStore": false,
-          "supportsDeveloperRole": false,
-          "supportsReasoningEffort": false,
-          "maxTokensField": "max_tokens",
-          "thinkingFormat": "zai",
-          "zaiToolStream": true
-        },
-        "contextWindow": 204800,
-        "maxTokens": 131072
-      }
-    ]
-  }
-}
+```bash
+mkdir -p ~/.pi/agent/themes ~/.pi/agent/extensions
+pi update
+pi list
 ```
 
-`zai-coding-cn` 的模型目录也可能由 `~/.pi/agent/models-store.json` 自动刷新；如果目标设备继续使用 ZAI，再按需保留/刷新该 provider。若已有 `models.json`，合并 provider 而非覆盖。
+`pi update` 会根据 `settings.json` 的 package 清单安装/更新包。不要直接复制本机 `~/.pi/agent/npm/`，该目录包含平台相关依赖和自动安装内容。
 
-### 4. 安装 Dracula 主题
+## 5. 覆盖主题
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dracula/pi-coding-agent/main/dracula.json \
   -o ~/.pi/agent/themes/dracula.json
 ```
 
-### 5. 恢复 Skills
+目标设备应使用该文件覆盖同名主题文件。
 
-当前 `~/.pi/agent/skills/` 目录不存在；本机可用的 pi Skills 由已安装包提供，主要来自：
+## 6. 覆盖本机扩展
 
-- `pi-subagents` — `~/.pi/agent/npm/node_modules/pi-subagents/skills/`
-- `pi-chrome-dev-tools` — `~/.pi/agent/npm/node_modules/pi-chrome-dev-tools/skills/`
+以下是本机 `~/.pi/agent/extensions/` 中已确认存在的文件/目录。将它们复制到目标设备对应路径；同名文件以本机版本覆盖：
 
-另有一套独立的 Agent Skills 位于 `~/.agents/skills/`，不属于 pi 配置目录；如需跨设备使用，应单独同步。当前已确认存在的设计/工程 Skills 包括 `fireworks-tech-graph`、`hallmark`、`impeccable` 等。
-
-不要把不存在或未确认来源的 `devils-advocate`、`grill-me` 写成必然可恢复项；如果这些自定义 Skill 在其他设备存在，应从源设备单独备份。
-
-### 6. 恢复扩展
-
-将以下已确认存在的文件或目录从旧设备整体拷贝到 `~/.pi/agent/extensions/`：
-
-- `clickable-file-paths.ts` — 可点击文件路径
-- `deepseek-usage.ts` — DeepSeek 用量/费用状态栏；依赖当前设备的 DeepSeek 认证
-- `friendly-provider-status.ts` — provider 状态显示
-- `herdr-agent-state.ts` — agent 状态显示
-- `working-timer.ts` — TUI 工作时长显示
-- `zai-quota-normalizer.ts` — ZAI 配额显示规范化
-- `subagent/` — `pi-subagents` 的本地配置目录；需同时安装 `npm:pi-subagents`
-
-`subagent/config.json` 包含并发、工作树目录与子代理限制等本机工作流参数，应随目录一并同步。当前没有确认存在的 `deepseek-balance.ts`，不要将其列为必需文件。
-
-### 7. 登录认证
-
-本机 `custom-openai` 使用自定义网关，目标设备应按实际方式配置，例如环境变量或 provider 配置。若使用 pi 支持的登录 provider，可执行：
-
-```bash
-pi auth check --provider <provider>
+```text
+extensions/bounded-compaction.ts
+extensions/clickable-file-paths.ts
+extensions/deepseek-usage.ts
+extensions/friendly-provider-status.ts
+extensions/herdr-agent-state.ts
+extensions/orca-agent-status.ts
+extensions/orca-prefill.ts
+extensions/orca-titlebar-spinner.ts
+extensions/working-timer.ts
+extensions/zai-quota-normalizer.ts
+extensions/zcode-bigmodel-oauth.ts
+extensions/subagent/config.json
 ```
 
-交互式登录请先启动 `pi`，再在交互界面执行 `/login`；具体 provider 以当前 pi 版本的登录菜单为准。
+特别说明：
 
-`auth.json` 含密钥，禁止跨设备明文复制。可用 `pi auth check --provider <provider>` 验证认证状态。
+- `extensions/subagent/config.json` 必须与 `npm:pi-subagents` 一起覆盖；
+- `zcode-bigmodel-oauth.ts` 必须与 `settings.json` 中的路径配置一起覆盖；
+- 当前没有发现 `deepseek-balance.ts`，不将它列为同步文件；
+- 目标设备若需要清理本机不存在的旧扩展，可先备份 `extensions/` 后按本机文件清单清理。
 
-### 8. 按设备调整
+## 7. 覆盖附属配置
 
-- `httpProxy`：改为本机代理端口，没有代理就删掉这一行
-- 字体/终端配置不在 pi 范围内，参考 wezterm-config 仓库
+以下文件属于本机配置基准，可从源设备复制并覆盖目标设备同路径文件：
 
-## 不同步的内容
+```text
+~/.pi/agent/pi-statusline.json
+~/.pi/agent/subagents.json
+~/.pi/agent/desktop/custom.css   # 可选
+```
+
+本机 `pi-statusline.json` 的主要配置：
+
+- palette：`sunset`
+- density：`compact`
+- separator：`none`
+- 分段：provider、model、thinking、cwd、branch、tools、context、tokens、cost、time
+
+`subagents.json` 保存本机的 model profiles，包括 `sdd-*`、`review-*`、`gentle-ai-*`、`jd-*` 等 profile。应直接复制本机文件，不要手动拼接。
+
+## 8. 覆盖模型定义，但重新填写认证
+
+本机有两个 provider：
+
+| Provider | API | 本机模型 |
+|---|---|---|
+| `custom-openai` | OpenAI Completions | `gpt-5.3-codex-spark`、`gpt-5.4`、`gpt-5.4-mini`、`gpt-5.5`、`gpt-5.6-luna`、`gpt-6-luna`、`gpt-5.6-sol`、`gpt-6.1-sol`、`gpt-6-sol`、`gpt-6-astra`、`gpt-5.6-terra`、`grok-4.6`、`grok-4.5`、`grok-4.3`、`grok-4.20-0309-reasoning`、`grok-4.20-0309-non-reasoning`、`grok-4.20-multi-agent-0309`、`grok-3-mini`、`grok-3-mini-fast`、`grok-composer-2.5-fast`、`grok-build-0.1` |
+| `volces-ark` | OpenAI Completions | `ark-code-latest` |
+
+`~/.pi/agent/models.json` 含 API key，不能直接复制。目标设备应创建/覆盖对应 provider 和模型定义，然后填入目标设备自己的密钥。不要把以下本机网关地址当作通用地址，目标设备应确认网络可达性：
+
+- `custom-openai`：`http://<custom-openai-host>:<port>/v1`；
+- `volces-ark`：`https://ark.cn-beijing.volces.com/api/plan/v3`。
+
+这两个地址来自本机 `models.json`；目标设备若网络环境相同，可按本机值填写，否则替换为目标设备可访问的地址。
+
+`models-store.json` 只保存自动刷新的模型目录缓存。本机当前缓存了 `zai-coding-cn` 和 `deepseek`，不作为同步配置，不要覆盖目标设备缓存。
+
+认证检查：
+
+```bash
+pi auth check --provider custom-openai
+pi auth check --provider volces-ark
+```
+
+## 9. 独立 Agent Skills
+
+本机 `~/.pi/agent/skills/` 没有自定义文件。由 pi 包提供的 Skills 会随包自动加载：
+
+- `pi-subagents/skills/`：`pi-subagents`、`council-mode`；
+- `pi-chrome-dev-tools/skills/`：`chrome-dev-tools`。
+
+本机另有独立的 `~/.agents/skills/`，不属于 pi 配置目录。需要同步时，以本机目录整体覆盖目标设备对应目录。当前已确认的目录包括：
+
+```text
+apple-design        archify                 auto-commit
+banner-design       brand                   code-reading-docs
+design              design-system           fireworks-tech-graph
+frontend-design     hallmark                hand-drawn
+hatch-pet           humanizer               imagegen
+impeccable          karpathy-guidelines    pixel-asset-forge
+plannotator         research                research-add-fields
+research-add-items  research-deep           research-report
+slides              taste-skill             technical-diagram-routing
+ui-styling
+```
+
+## 10. 禁止覆盖同步的内容
 
 | 路径 | 原因 |
 |---|---|
-| `~/.pi/agent/auth.json` | API 密钥 |
-| `~/.pi/agent/sessions/` | 会话历史，设备本地 |
-| `~/.pi/agent/npm/` | packages 自动安装 |
+| `~/.pi/agent/auth.json` | API/OAuth 凭据 |
+| `~/.pi/agent/models.json` 中的 API key | 敏感密钥，目标设备重新填写 |
+| `~/.pi/agent/sessions/` | 会话历史可能包含项目内容 |
+| `~/.pi/agent/npm/` | 平台相关，由 pi 自动安装 |
 | `~/.pi/agent/bin/` | 平台相关二进制 |
-| `deepseek-balance.json`、`deepseek-usage.json` 等缓存 | 运行时缓存 |
+| `~/.pi/agent/models-store.json` | 自动刷新缓存 |
+| `~/.pi/agent/mcp-*.json` | MCP 缓存/引导状态 |
+| `~/.pi/agent/fff/` | 查询历史与 frecency 数据库 |
+| `~/.pi/agent/web-search-cache/` | Web 搜索缓存 |
+| `~/.pi/agent/run-history.jsonl` | 本机运行历史 |
+| `deepseek-usage.json` 等用量缓存 | 运行时缓存 |
 
-## 验证清单
+本机没有发现独立的 `~/.pi/agent/mcp.json` 配置文件。MCP server 应在目标设备按实际项目和账号重新配置。
 
-- [ ] `pi` 版本为 `0.84.4` 或更高，启动无报错，主题为 dracula
-- [ ] `/settings` 中 provider 为 `custom-openai`，模型 `gpt-5.6-terra`（或目标设备实际配置）
-- [ ] `/skill` 列表包含已安装包提供的 Skills；独立 `~/.agents/skills/` 另行确认
-- [ ] `pi list` 与本指南中的插件清单一致
-- [ ] 网络请求正常；如使用代理，确认目标设备的代理端口
-- [ ] `pi --offline --no-session -p 'Reply only: OK'` 启动冒烟测试通过
+## 11. 覆盖后的验证
+
+```bash
+pi --version
+pi list
+pi auth check --provider custom-openai
+pi auth check --provider volces-ark
+pi --offline --no-session -p 'Reply only: OK'
+```
+
+检查项：
+
+- [ ] pi 版本为 `1.4.0` 或更高；
+- [ ] `settings.json` 与本指南中的完整配置一致；
+- [ ] 默认 provider 为 `custom-openai`，默认模型为 `gpt-5.6-terra`；
+- [ ] `pi list` 与本指南的 package 清单一致；
+- [ ] 扩展文件和 `extensions/subagent/config.json` 已按本机版本覆盖；
+- [ ] Dracula 主题已覆盖；
+- [ ] `pi auth check` 在目标设备通过；
+- [ ] offline 冒烟测试输出 `OK`。
+
+## 12. 本机配置检查命令
+
+后续以本机为准重新生成/核对本指南时：
+
+```bash
+pi --version
+pi list
+cat ~/.pi/agent/settings.json
+cat ~/.pi/agent/npm/package.json
+find ~/.pi/agent/extensions -maxdepth 2 -type f | sort
+find ~/.agents/skills -mindepth 1 -maxdepth 1 -type d | sort
+```
