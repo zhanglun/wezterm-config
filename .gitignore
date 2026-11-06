@@ -6,3 +6,7 @@
 herdr/mods/*/gpui-kit.d.ts
 herdr/mods/*/jsconfig.json
 herdr/mods/*/herdr.d.ts
+
+# python tooling
+__pycache__/
+*.pyc
