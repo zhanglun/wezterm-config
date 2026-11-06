@@ -42,6 +42,18 @@ HERDR_APP_HOME="$HOME/.config/herdr-app" ./herdr/install-office-2.sh
 
 The script runs `herdr-app check` and switches to `office-2` after installation.
 
+### Developing on this machine
+
+Default copy mode keeps Herdr's hot reload working: edit the files under `herdr/mods/office-2/`, re-run the script, and the running window picks the change up within a second. One command:
+
+```sh
+./herdr/install-office-2.sh && herdr-app shot /tmp/office.png
+```
+
+### Symlink mode (opt-in)
+
+`./herdr/install-office-2.sh --link` points Herdr at this repo with symlinks instead of copying. Reading and rendering work, but Herdr's file watcher does not follow symlinked targets, so mod/layout edits are not hot-reloaded and need an app restart to apply. Use it only when you prefer the repo as the single source and accept restarting Herdr after edits.
+
 ## Update later
 
 On the other machine:
