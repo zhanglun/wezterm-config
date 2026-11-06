@@ -13,6 +13,12 @@ This directory contains the maintained `office-2` Herdr layout and mod. It is se
 - `decor.js` owns windows, weather, glass wall, lighting, status board, calendar, and small props.
 - Weather uses one IP geolocation request and Open-Meteo current/daily data. Failures are silent.
 - `icons/` contains the CC0 weather PNGs and their license notice.
+- `spaces-tabs` (a clone of Herdr's `spaces` mod) draws the sidebar in two even
+  halves: every space on top, and under it the tabs of the active space, one row
+  each, with a `+` that opens a new tab in that space. Herdr's top tab bar is not
+  in this layout.
+- `panel-buttons` draws the sidebar's Files/Changes row and keeps the per-space
+  panel memory that used to live in Herdr's `tabs` mod.
 
 ## Install on another computer
 
@@ -31,6 +37,8 @@ The script copies only:
 - `herdr/layouts/office-2.json`
 - `herdr/layouts/office-2.svg`
 - `herdr/mods/office-2/`
+- `herdr/mods/spaces-tabs/`
+- `herdr/mods/panel-buttons/`
 
 It does not replace `settings.json`, `keys.json`, spaces, tabs, or the existing `office` layout.
 

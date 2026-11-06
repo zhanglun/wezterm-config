@@ -25,7 +25,7 @@
               "id": "spaces",
               "type": "block",
               "content": {
-                "mod": "spaces"
+                "mod": "spaces-tabs"
               },
               "size": {
                 "weight": 1
@@ -33,6 +33,16 @@
               "min": 90
             }
           ]
+        },
+        {
+          "id": "sidebar-panels",
+          "type": "block",
+          "content": {
+            "mod": "panel-buttons"
+          },
+          "size": {
+            "px": 34
+          }
         },
         {
           "id": "sidebar-footer",
@@ -60,17 +70,6 @@
       "id": "work",
       "type": "column",
       "children": [
-        {
-          "id": "tabs",
-          "type": "block",
-          "content": {
-            "mod": "tabs"
-          },
-          "size": {
-            "px": 42
-          },
-          "window_drag": true
-        },
         {
           "id": "office",
           "type": "block",
