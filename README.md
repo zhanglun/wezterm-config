@@ -213,6 +213,18 @@
 
 ---
 
+### Herdr 办公室布局（office-2）
+
+除了 WezTerm，本仓库还维护 Herdr 桌面应用的 `office-2` 布局与 mod（像素办公室），放在 [`herdr/`](./herdr/)：
+
+```sh
+./herdr/install-office-2.sh
+```
+
+只复制 `office-2` 相关文件，不覆盖本机其他 Herdr 配置。详见 [herdr/README.md](./herdr/README.md)。
+
+---
+
 ### All Key Bindings
 
 Most of the key bindings revolve around a <kbd>SUPER</kbd> and <kbd>SUPER_REV</kbd>(super reversed) keys.<br>
