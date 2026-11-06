@@ -48,6 +48,44 @@ It does not replace `settings.json`, `keys.json`, spaces, tabs, or the existing 
 HERDR_APP_HOME="$HOME/.config/herdr-app" ./herdr/install-office-2.sh
 ```
 
+## Draw a sprite and turn it into art.js data
+
+`art.js` sprites are flat lists of `[x, y, w, h, color]` rects, `y` counting up
+from the floor line. `tools/png2rects.py` converts a pixel-grid PNG into that
+format so coordinates do not have to be typed by hand.
+
+Draw the sprite first in a pixel editor (Piskel, Lospec Pixel Editor, Aseprite,
+Pixelorama). One PNG pixel must equal one art unit, so scale the reference down
+with nearest-neighbour first. Use the same box as the array you are replacing:
+`16x30` for `STAND`/`SIT` parts.
+
+```sh
+# Whole 16x30 image, printed as a JS snippet for STAND.body
+python3 herdr/tools/png2rects.py sprite.png --width 16 --height 30 --emit STAND.body
+
+# Mirror a left-facing drawing, verify the rects reproduce the image
+python3 herdr/tools/png2rects.py sprite.png --flip-x --self-check
+
+# JSON, for scripted use
+python3 herdr/tools/png2rects.py sprite.png --json
+
+# No file: run the built-in self-check
+python3 herdr/tools/png2rects.py
+```
+
+Notes:
+
+- Transparent pixels are skipped, so the rect list carries no background.
+- Colors already in `art.js` map to palette keys (`eye`, `shoe`, `collar`,
+  `belt`); anything else is emitted as a `"#rrggbb"` literal, which `rects()`
+  accepts. Rename those to palette keys by hand if you want shading variants.
+- Equal-colour runs are merged, so a flat fill becomes one rect instead of
+  hundreds of 1x1s.
+- Use RGBA or indexed PNGs. A 24-bit RGB file has no transparency and its
+  background becomes real pixels.
+- Only 8-bit, non-interlaced PNGs are read. Run `--self-check` when in doubt: it
+  rasterises the rects back and compares them to the source pixels.
+
 The script runs `herdr-app check` and switches to `office-2` after installation.
 
 ### Developing on this machine

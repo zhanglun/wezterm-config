@@ -661,7 +661,9 @@ export default class Office extends View {
   }
 
   part(list, pal, face, p = A.P) {
-    return A.layer(face < 0 ? A.mirror(list, A.PERSON) : list, pal, A.PERSON, p);
+    return A.PERSON_HIRES.has(list)
+      ? A.personLayer(list, pal, face, p)
+      : A.layer(face < 0 ? A.mirror(list, A.PERSON) : list, pal, A.PERSON, p);
   }
 
   pose(pal, face, parts, p = A.P) {

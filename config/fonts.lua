@@ -1,11 +1,11 @@
 local wezterm = require('wezterm')
 local platform = require('utils.platform')
 
--- local font_family = 'Maple Mono NF'
-local font_family = 'UbuntuSansMono Nerd Font'
+local font_family = 'Maple Mono NF'
+-- local font_family = 'UbuntuSansMono Nerd Font'
 -- local font_family = 'CartographCF Nerd Font'
 
-local font_size = platform.is_mac and 15 or 15
+local font_size = platform.is_mac and 16 or 15
 
 local font
 if platform.is_linux then

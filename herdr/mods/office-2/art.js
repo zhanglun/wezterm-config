@@ -9,14 +9,25 @@ export const BOX = 30; // units above the floor line a sprite's box reaches
 
 export const mirror = (rects, width) => rects.map(([x, y, w, h, c]) => [width - x - w, y, w, h, c]);
 
-export function rects(list, pal, p = P) {
+export function rects(list, pal, p = P, box = BOX) {
   return list.map(([x, y, w, h, c]) =>
-    div().absolute().left(x * p).top((BOX + y) * p).w(w * p).h(h * p).bg(pal[c] ?? c));
+    div().absolute().left(x * p).top((box + y) * p).w(w * p).h(h * p).bg(pal[c] ?? c));
 }
 
 // One movable part of a sprite: its own box, so a loop on it moves all its rects.
-export function layer(list, pal, width, p = P) {
-  return div().absolute().left(0).top(0).w(width * p).h(BOX * p).children(rects(list, pal, p));
+export function layer(list, pal, width, p = P, box = BOX) {
+  return div().absolute().left(0).top(0).w(width * p).h(box * p).children(rects(list, pal, p, box));
+}
+
+// The layout footprint stays 16×30, while people are authored on a 32×60 grid.
+// p/2 preserves the same physical size; GPUI keeps these as hard-edged rects.
+export const HI_PERSON = 32;
+export const HI_BOX = 60;
+export function personLayer(list, pal, face, p = P) {
+  const art = PERSON_HIRES.get(list);
+  const visible = face < 0 ? mirror(art, HI_PERSON) : art;
+  return div().absolute().left(0).top(0).w(PERSON * p).h(BOX * p)
+    .children(rects(visible, pal, p / 2, HI_BOX));
 }
 
 // People face right; the left-facing ones are mirrored in a box PERSON wide.
@@ -68,6 +79,45 @@ export const SIT = {
   laptop: [[7, -11, 6, 1, "laptop"], [12, -16, 1, 5, "laptop"], [11, -15, 1, 3, "laptopScreen"]],
   stool: [[2, -8, 8, 1, "stool"], [3, -7, 1, 7, "stoolLeg"], [8, -7, 1, 7, "stoolLeg"]],
 };
+
+// 32×60 source art. The old shapes are retained as a readable base and the
+// one-grid-pixel accents are authored at the new resolution instead of scaling
+// the rendered sprite. Every part still ends at the same y=0 baseline.
+const hi = (list, accents = []) => [
+  ...list.map(([x, y, w, h, c]) => [x * 2, y * 2, w * 2, h * 2, c]),
+  ...accents,
+];
+
+export const PERSON_HIRES = new Map([
+  [STAND.body, hi(STAND.body, [
+    [8, -39, 6, 1, "hairHi"], [10, -35, 1, 1, "hairHi"], [14, -34, 1, 1, "skin"],
+    [9, -32, 1, 1, "eye"], [15, -31, 1, 1, "skin"], [7, -25, 1, 3, "shirtDark"],
+    [16, -22, 1, 4, "collar"], [20, -19, 1, 5, "shirtDark"], [7, -13, 1, 1, "belt"],
+  ])],
+  [STAND.backLeg, hi(STAND.backLeg, [[5, -9, 1, 4, "pants2"], [3, -2, 6, 1, "shoe"]])],
+  [STAND.frontLeg, hi(STAND.frontLeg, [[15, -9, 1, 4, "pants"], [16, -2, 7, 1, "shoe"]])],
+  [STAND.arm, hi(STAND.arm, [[13, -20, 1, 4, "sleeve"], [17, -13, 1, 2, "skin"]])],
+  [STAND.walkArmBack, hi(STAND.walkArmBack, [[5, -20, 1, 4, "sleeve2"], [2, -12, 1, 2, "skin"]])],
+  [STAND.walkArmFront, hi(STAND.walkArmFront, [[15, -20, 1, 4, "sleeve"], [19, -14, 1, 2, "skin"]])],
+  [STAND.walkLegBack, hi(STAND.walkLegBack, [[5, -9, 1, 4, "pants2"], [3, -2, 7, 1, "shoe"]])],
+  [STAND.walkLegFront, hi(STAND.walkLegFront, [[15, -9, 1, 4, "pants"], [17, -2, 7, 1, "shoe"]])],
+  [STAND.walkLegCrossBack, hi(STAND.walkLegCrossBack, [[9, -9, 1, 4, "pants2"], [13, -2, 7, 1, "shoe"]])],
+  [STAND.walkLegCrossFront, hi(STAND.walkLegCrossFront, [[11, -9, 1, 4, "pants"], [7, -2, 7, 1, "shoe"]])],
+  [STAND.armUp, hi(STAND.armUp, [[21, -34, 1, 5, "sleeve"], [21, -39, 1, 2, "skin"]])],
+  [STAND.armUpBack, hi(STAND.armUpBack, [[1, -34, 1, 5, "sleeve2"], [1, -39, 1, 2, "skin"]])],
+  [STAND.cup, hi(STAND.cup, [[18, -24, 1, 3, "cup"]])],
+  [STAND.box, hi(STAND.box, [[20, -27, 1, 3, "cardboardTop"]])],
+  [STAND.pizza, hi(STAND.pizza, [[18, -23, 1, 1, "pizzaLogo"]])],
+  [SIT.body, hi(SIT.body, [
+    [8, -47, 6, 1, "hairHi"], [10, -43, 1, 1, "hairHi"], [14, -42, 1, 1, "skin"],
+    [9, -40, 1, 1, "eye"], [15, -39, 1, 1, "skin"], [7, -29, 1, 3, "shirtDark"],
+    [16, -26, 1, 4, "collar"], [20, -22, 1, 4, "shirtDark"], [7, -19, 1, 1, "pants2"],
+  ])],
+  [SIT.arm, hi(SIT.arm, [[11, -30, 1, 4, "sleeve"], [17, -24, 1, 2, "skin"]])],
+  [SIT.rest, hi(SIT.rest, [[11, -30, 1, 8, "sleeve"]])],
+  [SIT.lapArm, hi(SIT.lapArm, [[11, -30, 1, 5, "sleeve"], [19, -25, 1, 2, "skin"]])],
+  [SIT.laptop, hi(SIT.laptop, [[15, -31, 1, 5, "laptopScreen"]])],
+]);
 
 export const SLOT = 48; // units per desk
 export const DESK = {
