@@ -1,7 +1,7 @@
 # pi 跨设备配置同步指南
 
 > 在新设备上让 pi 阅读此文件，并**以本机配置为准覆盖目标设备的 pi 配置**。
-> 本基准采集于 **2026-11-05**，本机 pi CLI 为 **1.4.0**。
+> 本基准采集于 **2026-11-07**，本机 pi CLI 为 **1.5.0**。
 >
 > 覆盖前请确认目标设备不需要保留自己的 pi 设置。`auth.json`、`models.json` 中的密钥、会话和缓存不在同步范围内，必须按目标设备重新配置。
 
@@ -9,8 +9,8 @@
 
 | 项目 | 本机值 |
 |---|---|
-| pi CLI | `1.4.0` |
-| Node.js | `v24.15.0` |
+| pi CLI | `1.5.0` |
+| Node.js | `v22.23.4` |
 | 配置目录 | `~/.pi/agent/` |
 | 主题 | `dracula` |
 | 默认 provider | `custom-openai` |
@@ -24,9 +24,9 @@
 在目标设备执行同步时，按以下原则处理：
 
 - `settings.json`：用本机版本**覆盖**目标设备版本；
-- `extensions/`：用本机确认存在的扩展**覆盖/补齐**目标目录；
+- `extensions/`：只需补齐 `zcode-bigmodel-oauth.ts`，其余见第 6 节；
 - `themes/dracula.json`：用本机 Dracula 主题**覆盖**目标文件；
-- `extensions/subagent/config.json`、`pi-statusline.json`、`subagents.json`：用本机版本**覆盖**目标文件；
+- `pi-statusline.json`、`subagents.json`、`extensions/subagent/config.json`：本机不存在，**不要创建或同步**，见第 6、7 节；
 - npm 包：按本指南的 package 清单重新安装/更新，以本机版本为准；
 - `models.json`：只复制脱敏后的 provider/model 定义，密钥在目标设备重新填写；
 - `auth.json`、会话、缓存、平台二进制：**禁止覆盖同步**。
@@ -39,7 +39,7 @@
 
 ```json
 {
-  "lastChangelogVersion": "1.4.0",
+  "lastChangelogVersion": "1.5.0",
   "theme": "dracula",
   "externalEditor": "zed --wait",
   "defaultProvider": "custom-openai",
@@ -130,7 +130,6 @@
     "npm:pi-chrome-dev-tools",
     "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@narumitw/pi-goal",
-    "../../Documents/mine/pi-pet",
     "npm:pi-mcp-adapter",
     "npm:@dietrichgebert/ponytail",
     "npm:@fradser/pi-monitor",
@@ -147,7 +146,7 @@
 
 注意：
 
-- `../../Documents/mine/pi-pet` 是本机路径依赖。目标设备需将 pi-pet 克隆到对应路径；不需要时从 `packages` 中删除；
+- 早期基线里的 `../../Documents/mine/pi-pet` 本地路径依赖已移除，`packages` 中不要再加回；
 - `extensions/zcode-bigmodel-oauth.ts` 是本机扩展文件路径，必须同时复制文件；源码已收录在本仓库 `pi/extensions/zcode-bigmodel-oauth.ts`，可直接复制；
 - `lastChangelogVersion` 也按本机值覆盖，不保留目标设备旧值。
 
@@ -160,28 +159,29 @@
 | `pi-simplify` | `0.2.3` |
 | `pi-chrome` | `0.15.57` |
 | `pi-markdown-preview` | `0.26.4` |
-| `pi-subagents` | `0.84.0` |
+| `pi-subagents` | `0.86.0` |
 | `pi-web-access` | `0.47.0` |
 | `pi-execution-time` | `0.3.0` |
 | `pi-powerline-footer` | `0.22.0` |
 | `pi-chrome-dev-tools` | `0.1.0` |
 | `@juicesharp/rpiv-ask-user-question` | `2.15.0` |
-| `@narumitw/pi-goal` | `0.54.15` |
+| `@narumitw/pi-goal` | `0.54.17` |
 | `pi-mcp-adapter` | `7.0.1` |
 | `@dietrichgebert/ponytail` | `5.3.3` |
 | `@fradser/pi-monitor` | `2.3.1` |
 | `@ff-labs/pi-fff` | `0.11.0` |
-| `@plannotator/pi-extension` | `0.28.49` |
+| `@plannotator/pi-extension` | `0.28.51` |
 
 在目标设备覆盖 `settings.json` 后执行：
 
 ```bash
 mkdir -p ~/.pi/agent/themes ~/.pi/agent/extensions
 pi update
+pi update --extensions
 pi list
 ```
 
-`pi update` 会根据 `settings.json` 的 package 清单安装/更新包。不要直接复制本机 `~/.pi/agent/npm/`，该目录包含平台相关依赖和自动安装内容。
+注意：`pi update` 只更新 pi 自身并**跳过**扩展安装，必须再执行一次 `pi update --extensions` 才会按 `settings.json` 的 `packages` 清单安装 npm 包。不要直接复制本机 `~/.pi/agent/npm/`，该目录包含平台相关依赖和自动安装内容。
 
 ## 5. 覆盖主题
 
@@ -194,7 +194,16 @@ curl -fsSL https://raw.githubusercontent.com/dracula/pi-coding-agent/main/dracul
 
 ## 6. 覆盖本机扩展
 
-以下是本机 `~/.pi/agent/extensions/` 中已确认存在的文件/目录。将它们复制到目标设备对应路径；同名文件以本机版本覆盖：
+本机 `~/.pi/agent/extensions/` 当前只有一个文件，源码收录在仓库内，直接复制即可：
+
+```bash
+mkdir -p ~/.pi/agent/extensions
+cp pi/extensions/zcode-bigmodel-oauth.ts ~/.pi/agent/extensions/
+```
+
+该文件必须与 `settings.json` 中 `packages` 的 `extensions/zcode-bigmodel-oauth.ts` 条目同时存在，否则 pi 启动会报路径缺失。
+
+历史基线还引用过以下扩展，但**本机与仓库均无源码**，只有旧源机器上有。需要时从源机器拷贝，拿不到就忽略（不装不影响 pi 启动，也不会被 `settings.json` 引用）：
 
 ```text
 extensions/bounded-compaction.ts
@@ -207,35 +216,19 @@ extensions/orca-prefill.ts
 extensions/orca-titlebar-spinner.ts
 extensions/working-timer.ts
 extensions/zai-quota-normalizer.ts
-extensions/zcode-bigmodel-oauth.ts
 extensions/subagent/config.json
 ```
 
-特别说明：
+- `extensions/subagent/config.json` 是 `npm:pi-subagents` 的可选配置，缺失时使用内置默认值，不影响启动；
+- 当前没有发现 `deepseek-balance.ts`，不将它列为同步文件。
 
-- `extensions/subagent/config.json` 必须与 `npm:pi-subagents` 一起覆盖；
-- `zcode-bigmodel-oauth.ts` 必须与 `settings.json` 中的路径配置一起覆盖；其源码收录在仓库 `pi/extensions/zcode-bigmodel-oauth.ts`（与本机 `~/.pi/agent/extensions/` 版本保持一致）；
-- 当前没有发现 `deepseek-balance.ts`，不将它列为同步文件；
-- 目标设备若需要清理本机不存在的旧扩展，可先备份 `extensions/` 后按本机文件清单清理。
+## 7. 附属配置
 
-## 7. 覆盖附属配置
+本机**没有** `pi-statusline.json`、`subagents.json`、`desktop/custom.css`，不需要补齐。
 
-以下文件属于本机配置基准，可从源设备复制并覆盖目标设备同路径文件：
-
-```text
-~/.pi/agent/pi-statusline.json
-~/.pi/agent/subagents.json
-~/.pi/agent/desktop/custom.css   # 可选
-```
-
-本机 `pi-statusline.json` 的主要配置：
-
-- palette：`sunset`
-- density：`compact`
-- separator：`none`
-- 分段：provider、model、thinking、cwd、branch、tools、context、tokens、cost、time
-
-`subagents.json` 保存本机的 model profiles，包括 `sdd-*`、`review-*`、`gentle-ai-*`、`jd-*` 等 profile。应直接复制本机文件，不要手动拼接。
+- 状态栏由 `npm:pi-powerline-footer` 提供，配置在 `settings.json` 的 `powerline` 键内（当前 `separator` 为 `dot`），该插件**不读独立的 json 文件**。它的内置 preset 只有 `default`、`minimal`、`compact`、`full`、`nerd`、`ascii`；
+- 早期基线提到的 `pi-statusline.json`（palette `sunset`、density `compact`、10 个分段）属于另一个**未安装**的插件 `@narumitw/pi-statusline`，与本指南的包清单无关。不要安装，也不要补这个文件，它对 pi-powerline-footer 无效；
+- subagent 的模型配置已在 `settings.json` 的 `subagents.agentOverrides` 内，不需要额外的 `subagents.json`。
 
 ## 8. 覆盖模型定义，但重新填写认证
 
@@ -272,16 +265,9 @@ pi auth check --provider volces-ark
 本机另有独立的 `~/.agents/skills/`，不属于 pi 配置目录。需要同步时，以本机目录整体覆盖目标设备对应目录。当前已确认的目录包括：
 
 ```text
-apple-design        archify                 auto-commit
-banner-design       brand                   code-reading-docs
-design              design-system           fireworks-tech-graph
-frontend-design     hallmark                hand-drawn
-hatch-pet           humanizer               imagegen
-impeccable          karpathy-guidelines    pixel-asset-forge
-plannotator         research                research-add-fields
-research-add-items  research-deep           research-report
-slides              taste-skill             technical-diagram-routing
-ui-styling
+design-taste-frontend  humanizer          impeccable
+karpathy-guidelines    plannotator        plannotator-annotate
+plannotator-inbox      plannotator-last   plannotator-review
 ```
 
 ## 10. 禁止覆盖同步的内容
@@ -314,11 +300,11 @@ pi --offline --no-session -p 'Reply only: OK'
 
 检查项：
 
-- [ ] pi 版本为 `1.4.0` 或更高；
+- [ ] pi 版本为 `1.5.0` 或更高；
 - [ ] `settings.json` 与本指南中的完整配置一致；
 - [ ] 默认 provider 为 `custom-openai`，默认模型为 `gpt-5.6-terra`；
-- [ ] `pi list` 与本指南的 package 清单一致；
-- [ ] 扩展文件和 `extensions/subagent/config.json` 已按本机版本覆盖；
+- [ ] `pi list` 与本指南的 package 清单一致（15 个 npm 包 + `extensions/zcode-bigmodel-oauth.ts`）；
+- [ ] `~/.pi/agent/extensions/zcode-bigmodel-oauth.ts` 已复制；
 - [ ] Dracula 主题已覆盖；
 - [ ] `pi auth check` 在目标设备通过；
 - [ ] offline 冒烟测试输出 `OK`。
