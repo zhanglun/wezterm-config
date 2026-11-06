@@ -148,7 +148,7 @@
 注意：
 
 - `../../Documents/mine/pi-pet` 是本机路径依赖。目标设备需将 pi-pet 克隆到对应路径；不需要时从 `packages` 中删除；
-- `extensions/zcode-bigmodel-oauth.ts` 是本机扩展文件路径，必须同时复制文件；
+- `extensions/zcode-bigmodel-oauth.ts` 是本机扩展文件路径，必须同时复制文件；源码已收录在本仓库 `pi/extensions/zcode-bigmodel-oauth.ts`，可直接复制；
 - `lastChangelogVersion` 也按本机值覆盖，不保留目标设备旧值。
 
 ## 4. 覆盖并安装 npm 包
@@ -214,7 +214,7 @@ extensions/subagent/config.json
 特别说明：
 
 - `extensions/subagent/config.json` 必须与 `npm:pi-subagents` 一起覆盖；
-- `zcode-bigmodel-oauth.ts` 必须与 `settings.json` 中的路径配置一起覆盖；
+- `zcode-bigmodel-oauth.ts` 必须与 `settings.json` 中的路径配置一起覆盖；其源码收录在仓库 `pi/extensions/zcode-bigmodel-oauth.ts`（与本机 `~/.pi/agent/extensions/` 版本保持一致）；
 - 当前没有发现 `deepseek-balance.ts`，不将它列为同步文件；
 - 目标设备若需要清理本机不存在的旧扩展，可先备份 `extensions/` 后按本机文件清单清理。
 
