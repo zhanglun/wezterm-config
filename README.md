@@ -12,8 +12,6 @@
   </a>
 </p>
 
-![screenshot](./.github/screenshots/demo-2.gif)
-
 ---
 
 ### Features
