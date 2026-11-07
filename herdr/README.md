@@ -103,10 +103,11 @@ every sprite, palette and decor widget from the same source files, in its own
 window, so experiments never touch the daily layout.
 
 `install-office-preview.sh` installs the `office-preview` gallery mod and
-**switches the daily window to the `office-preview` layout**, which has no
-sidebar or terminals — the rest of the window goes blank until you switch back
-with `herdr-app do layout.switch --name office-2`. To browse the gallery
-without touching the daily window at all, run:
+layout into the daily Herdr home **without touching the daily layout**. To
+see it inside the daily window, switch manually
+(`herdr-app do layout.switch --name office-preview`; that layout has no
+sidebar or terminals — switch back with `--name office-2`). To browse the
+gallery without touching the daily window at all, run:
 
 ```sh
 ./herdr/preview-window.sh

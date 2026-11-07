@@ -14,6 +14,7 @@ const STATUS = {
 const LABEL = { working: "WORKING", blocked: "BLOCKED", done: "DONE", idle: "IDLE" };
 const statuses = Object.keys(STATUS);
 const samplePalettes = ["preview/alice", "preview/ben", "preview/cara", "preview/drew"];
+const EDITABLE = ["person", "desk", "couch", "cooler", "counter", "plant", "cat", "pizza"];
 
 function button(id, label, active, action) {
   return div().id(id).px(10).py(7).rounded(4).bg(active ? "#2c4a53" : "#242c38")
@@ -34,12 +35,12 @@ export default class OfficePreview extends View {
   init(_props, cx) {
     this.status = "working";
     this.now = new Date();
+    this.edit = { target: "person", scale: 4, x: 0, y: 0 };
     cx.timer.every(30000, (cx) => { this.now = new Date(); cx.notify(); });
   }
 
   person(status, pal, scale = 4) {
     const busy = status === "working";
-    const standing = status !== "working" && status !== "idle";
     const body = busy ? [A.SIT.body, A.SIT.arm, A.SIT.laptop]
       : status === "done" ? [A.STAND.body, A.STAND.backLeg, A.STAND.frontLeg, A.STAND.armUp, A.STAND.armUpBack]
       : status === "blocked" ? [A.STAND.body, A.STAND.backLeg, A.STAND.frontLeg, A.STAND.armUp]
@@ -86,10 +87,31 @@ export default class OfficePreview extends View {
       .child(div().absolute().left(42).top(28).w(width * p).h(A.BOX * p).children(A.rects(art.rects, A.PALETTE, p)));
   }
 
+  editButton(label, action, active = false) {
+    return button(`edit-${label}`, label, active, (_e, cx) => { action(); cx.notify(); });
+  }
+
+  editableArt() {
+    const name = this.edit.target;
+    if (name === "person") return this.person(this.status, A.look("preview/live"), this.edit.scale)
+      .absolute().left(180 + this.edit.x).top(24 + this.edit.y).w(110).h(132).bg("#00000000");
+    const data = {
+      couch: ["COUCH", A.COUCH], cooler: ["COOLER", A.COOLER], counter: ["COUNTER", A.COUNTER],
+      plant: ["PLANT", A.PLANT], cat: ["CAT", { rects: A.KITTY.sit }], pizza: ["PIZZA", { rects: A.PIZZA_BOX }],
+    }[name];
+    const [label, art] = data;
+    const widths = { COUCH: A.COUCH.width, COOLER: A.COOLER.width, COUNTER: A.COUNTER.width, PLANT: A.PLANT.width, CAT: A.CAT, PIZZA: 20 };
+    const p = this.edit.scale;
+    return div().absolute().left(180 + this.edit.x).top(24 + this.edit.y).w(170).h(128).bg("#202a37").rounded(4).overflow_hidden()
+      .child(div().absolute().left(42).top(28).w(widths[label] * p).h(A.BOX * p).children(A.rects(art.rects, A.PALETTE, p)))
+      .child(div().absolute().left(8).top(8).text_size(9).text_color("#9eabb9").child(label));
+  }
+
   render(cx) {
     A.setScale(3);
     const current = this.status;
     const pals = samplePalettes.map((name) => A.look(name));
+    const edit = this.edit;
     const statusButtons = h_flex().gap(7).children(statuses.map((s) => button(`status-${s}`, LABEL[s], current === s, (_e, cx) => { this.status = s; cx.notify(); })));
     const people = h_flex().gap(10).children(statuses.map((s, i) => this.person(s, pals[i])));
     const desks = h_flex().gap(10).children(statuses.map((s, i) => this.desk(s, pals[i], i)));
@@ -110,10 +132,33 @@ export default class OfficePreview extends View {
       div().relative().w(170).h(126).bg("#202a37").rounded(4).child(D.incidentSign(28, 27, 74, 12, current === "blocked")),
       div().relative().w(170).h(126).bg("#202a37").rounded(4).child(D.weatherBoard(10, 28, "12:42", current === "blocked" ? "storm" : "clear", { temp: 18, wind: 12, hum: 58, place: "LOCAL" }, false)),
     ]);
+    const editControls = v_flex().gap(9).children([
+      h_flex().gap(7).children(EDITABLE.map((name) => this.editButton(name.toUpperCase(), () => {
+        this.edit.target = name;
+        this.edit.scale = name === "person" ? 4 : 4;
+        this.edit.x = 0;
+        this.edit.y = 0;
+      }, edit.target === name))),
+      h_flex().gap(7).children([
+        this.editButton("SCALE −", () => { this.edit.scale = Math.max(1, this.edit.scale - 1); }),
+        div().px(10).py(7).text_size(11).text_color("#dce6ef").child(`scale ${edit.scale}`),
+        this.editButton("SCALE +", () => { this.edit.scale = Math.min(10, this.edit.scale + 1); }),
+        this.editButton("X −", () => { this.edit.x -= 8; }),
+        this.editButton("X +", () => { this.edit.x += 8; }),
+        this.editButton("Y −", () => { this.edit.y -= 8; }),
+        this.editButton("Y +", () => { this.edit.y += 8; }),
+        this.editButton("RESET", () => { this.edit.x = 0; this.edit.y = 0; this.edit.scale = edit.target === "person" ? 4 : 4; }),
+      ]),
+    ]);
+    const editStage = div().relative().h(190).w(560).bg("#111923").rounded(4).overflow_hidden()
+      .child(div().absolute().left(20).top(20).text_size(11).text_color("#8e9aaa").child(`LIVE EDIT · ${edit.target.toUpperCase()} · ${edit.x}, ${edit.y}`))
+      .child(div().absolute().left(0).right(0).bottom(32).h(2).bg("#465568"))
+      .child(this.editableArt());
     return v_flex().size_full().min_h(0).overflow_y_scrollbar().mode("always").bg("#11161e").text_color("#e9eef3")
       .child(v_flex().gap(15).p(20).children([
         v_flex().gap(4).child(div().text_size(22).font_bold().child("Office-2 native preview"))
           .child(div().text_size(12).text_color("#8e9aaa").child("真实 GPUI mod gallery · art.js / decor.js · no browser mock")),
+        panel("Realtime editor — same GPUI render path", h_flex().gap(14).children([v_flex().gap(10).children([editControls, div().text_size(11).text_color("#8e9aaa").child("选择元素后调整 scale / X / Y，预览会立即重绘。")]), editStage])),
         panel("Agent states", statusButtons),
         panel("People — same sprites and palettes", people),
         panel("Desks — status screen and deskAccent()", desks),
