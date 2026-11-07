@@ -1,0 +1,30 @@
+{
+  "id": "root",
+  "type": "column",
+  "titlebar": "none",
+  "traffic_lights": [16, 18],
+  "background": "canvas",
+  "children": [
+    {
+      "id": "titlebar",
+      "type": "block",
+      "size": { "px": 34 },
+      "window_drag": true,
+      "content": { "mod": "preview-titlebar" }
+    },
+    {
+      "id": "office-live",
+      "type": "block",
+      "content": { "mod": "office-2" },
+      "size": { "px": 250 },
+      "min": 120,
+      "max": 400
+    },
+    {
+      "id": "gallery",
+      "type": "block",
+      "content": { "mod": "office-preview" },
+      "size": { "weight": 1 }
+    }
+  ]
+}

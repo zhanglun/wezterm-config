@@ -9,8 +9,8 @@ This directory contains the maintained `office-2` Herdr layout and mod. It is se
 - JavaScript describes `div()` elements and pixel rectangles.
 - Herdr renders those elements with GPUI/Rust; there is no HTML, CSS, browser view, Canvas, or third-party tile engine.
 - `main.js` owns the live office view, agent states, time/weather polling, layout, and animation composition.
-- `art.js` owns pixel-art data for people, desks, furniture, and the cat.
-- `decor.js` owns windows, weather, glass wall, lighting, status board, calendar, and small props.
+- `art.js` is the stable art API. Its domain files live under `mods/office-2/art/`: `people.js`, `palette.js`, `furniture.js`, `props.js`, `cat.js`, and `render.js`.
+- `decor.js` is the stable decor API. Its domain files live under `mods/office-2/decor/`: `windows.js`, `room.js`, `widgets.js`, and `seasonal.js`.
 - Weather uses one IP geolocation request and Open-Meteo current/daily data. Failures are silent.
 - `icons/` contains the CC0 weather PNGs and their license notice.
 - `spaces-tabs` (a clone of Herdr's `spaces` mod) draws the sidebar in two even
@@ -90,11 +90,54 @@ The script runs `herdr-app check` and switches to `office-2` after installation.
 
 ### Developing on this machine
 
-Default copy mode keeps Herdr's hot reload working: edit the files under `herdr/mods/office-2/`, re-run the script, and the running window picks the change up within a second. One command:
+Default copy mode keeps Herdr's hot reload working: edit the files under `herdr/mods/office-2/`, re-run the script, and the running window picks the change up within a second. See `mods/office-2/STRUCTURE.md` for which file to edit. One command:
 
 ```sh
 ./herdr/install-office-2.sh && herdr-app shot /tmp/office.png
 ```
+
+## Preview the art in a separate window
+
+This is the standard loop for testing art/decor UI work: the gallery shows
+every sprite, palette and decor widget from the same source files, in its own
+window, so experiments never touch the daily layout.
+
+`install-office-preview.sh` installs the `office-preview` gallery mod and
+**switches the daily window to the `office-preview` layout**, which has no
+sidebar or terminals — the rest of the window goes blank until you switch back
+with `herdr-app do layout.switch --name office-2`. To browse the gallery
+without touching the daily window at all, run:
+
+```sh
+./herdr/preview-window.sh
+```
+
+This opens a second Herdr window from an isolated config home
+(`~/.config/herdr-preview`, override with `HERDR_PREVIEW_HOME`): the live
+office strip on top, the "Office-2 native preview" gallery below. The daily
+window keeps its own layout the whole time; both windows share the same
+terminals and agents (herdr-core), so the live strip shows real agents.
+
+A full edit-test cycle:
+
+```sh
+# 1. edit art/ or decor/ under herdr/mods/office-2/, then refresh the gallery
+./herdr/preview-window.sh          # re-copies mods, hot-reloads, raises the window
+
+# 2. screenshot the preview window alone (never the daily one)
+HERDR_APP_HOME="$HOME/.config/herdr-preview" herdr-app shot /tmp/preview.png
+
+# 3. sanity-check the mod still loads
+HERDR_APP_HOME="$HOME/.config/herdr-preview" herdr-app check "$HOME/.config/herdr-preview/mods/office-preview"
+```
+
+`HERDR_APP_HOME` picks which running window the CLI talks to, so the shot and
+check commands above cannot disturb the daily window. Close the preview
+window like any window; the daily window is unaffected.
+
+Note: the examples call `herdr-app`. If it is not on your PATH, alias the app
+binary first (`alias herdr-app="$HOME/Applications/Herdr.app/Contents/MacOS/Herdr"`
+on this machine); the install scripts fall back to that path themselves.
 
 ### Symlink mode (opt-in)
 
