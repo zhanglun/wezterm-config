@@ -3,9 +3,9 @@
 /lua_modules
 /.luarocks
 .DS_Store
-herdr/mods/*/gpui-kit.d.ts
-herdr/mods/*/jsconfig.json
-herdr/mods/*/herdr.d.ts
+herdr/mods/**/gpui-kit.d.ts
+herdr/mods/**/jsconfig.json
+herdr/mods/**/herdr.d.ts
 
 # python tooling
 __pycache__/

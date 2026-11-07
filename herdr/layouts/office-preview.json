@@ -1,0 +1,22 @@
+{
+  "id": "root",
+  "type": "column",
+  "children": [
+    {
+      "id": "office-live",
+      "type": "block",
+      "content": { "mod": "office-2" },
+      "size": { "px": 320 },
+      "min": 170,
+      "max": 520
+    },
+    {
+      "id": "preview",
+      "type": "block",
+      "content": { "mod": "office-preview" },
+      "size": { "weight": 1 }
+    }
+  ],
+  "background": "canvas",
+  "titlebar": "none"
+}
