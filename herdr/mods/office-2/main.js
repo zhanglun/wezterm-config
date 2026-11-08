@@ -661,29 +661,25 @@ export default class Office extends View {
   }
 
   part(list, pal, face, p = A.P) {
-    return A.PERSON_HIRES.has(list)
-      ? A.personLayer(list, pal, face, p)
-      : A.layer(face < 0 ? A.mirror(list, A.PERSON) : list, pal, A.PERSON, p);
+    return A.layer(face < 0 ? A.mirror(list, A.PERSON) : list, pal, A.PERSON, p);
   }
 
   pose(pal, face, parts, p = A.P) {
     return div().absolute().size_full().children(parts.map((l) => this.part(l, pal, face, p)));
   }
 
-  // Walking: legs swinging, a bob. `extra` parts ride along (a headset, a box); `swing`
-  // false keeps the arms on whatever they're carrying.
+  // Walking: the standing legs slide in opposite phases under a gentle body
+  // bob, and one front arm swings slightly — the same walk the original
+  // office mod (demo) uses. `extra` parts ride along (a headset, a box);
+  // carrying hides the arm, and `swing` false keeps it still.
   walker(pal, face, extra = [], p = A.P, swing = true) {
     const carry = extra.some((l) => l === A.STAND.box || l === A.STAND.pizza);
-    const stride = this.part(A.STAND.walkLegBack, pal, face, p)
-      .loop("left", { from: -p, to: p, period: 520, easing: "linear" });
-    const strideFront = this.part(A.STAND.walkLegFront, pal, face, p)
-      .loop("left", { from: p, to: -p, period: 520, easing: "linear" });
-    const arms = carry ? [] : [
-      this.part(A.STAND.walkArmBack, pal, face, p).when(swing, (el) => el.loop("left", { from: p, to: -p, period: 520 })),
-      this.part(A.STAND.walkArmFront, pal, face, p).when(swing, (el) => el.loop("left", { from: -p, to: p, period: 520 })),
-    ];
     return div().absolute().size_full().loop("top", { from: 0, to: -2, period: 320 }).children([
-      stride, this.part(A.STAND.body, pal, face, p), ...extra.map((l) => this.part(l, pal, face, p)), strideFront, ...arms,
+      this.part(A.STAND.backLeg, pal, face, p).loop("left", { from: -p, to: p, period: 520, easing: "linear" }),
+      this.part(A.STAND.body, pal, face, p),
+      ...extra.map((l) => this.part(l, pal, face, p)),
+      this.part(A.STAND.frontLeg, pal, face, p).loop("left", { from: p, to: -p, period: 520, easing: "linear" }),
+      ...(carry ? [] : [this.part(A.STAND.arm, pal, face, p).when(swing, (el) => el.loop("left", { from: -2, to: 2, period: 520 }))]),
     ]);
   }
 
