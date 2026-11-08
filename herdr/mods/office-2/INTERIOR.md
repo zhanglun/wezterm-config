@@ -68,10 +68,7 @@
   - `room()`：室内层次和物件组合
   - `deskAt()`：工位状态细节
   - `night()`：夜间整体亮度、桌灯、屏幕光和雷暴闪光
-- `decor.js`（聚合入口，领域代码在 `decor/` 下）
-  - `decor/windows.js`：`glassWall()` 落地窗、天空、城市天际线与天气粒子
-  - `decor/room.js`：`roomDetails()` 地毯、落地灯、指示灯、线缆轨；`lifeProps()`/`petCorner()`/`door()` 等室内陈设
-  - `decor/widgets.js`：`deskAccent()` 工位状态指示灯；`whiteboard()`/`incidentSign()`/`wallCalendar()`/`portrait()`/`videoWall()`/`weatherBoard()` 挂墙与信息部件
-  - `decor/seasonal.js`：`stringLights()`/`banner()`/`alarm()` 节日与警报特效
-- `art.js`（聚合入口，领域代码在 `art/` 下）
-  - `art/render.js` 矩形渲染助手；`art/palette.js` 调色板与外观；`art/people.js` 人物；`art/furniture.js` 桌椅；`art/props.js` 道具家具；`art/cat.js` 猫
+- `decor.js`
+  - `roomDetails()`：地毯、落地灯、设备指示灯、线缆轨和玻璃反光
+  - `deskAccent()`：工位状态指示灯
+  - `glassWall()`：落地窗和窗外景色
