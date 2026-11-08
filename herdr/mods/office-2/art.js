@@ -31,17 +31,18 @@ const head = (x, y) => [
 ];
 
 export const STAND = {
-  body: [...head(3, -19), [4, -12, 4, 1, "skin"], [3, -11, 6, 6, "shirt"], [3, -6, 6, 1, "belt"]],
-  backLeg: [[4, -5, 2, 4, "pants2"], [4, -1, 3, 1, "shoe"]],
-  frontLeg: [[6, -5, 2, 4, "pants"], [6, -1, 3, 1, "shoe"]],
-  arm: [[5, -11, 2, 5, "sleeve"], [5, -6, 2, 1, "skin"]],
-  cup: [[5, -11, 2, 3, "sleeve"], [6, -9, 3, 2, "sleeve"], [9, -12, 2, 3, "cup"], [8, -9, 1, 2, "skin"]],
-  armUp: [[10, -17, 2, 6, "sleeve"], [10, -19, 2, 2, "skin"]],
-  armUpBack: [[0, -17, 2, 6, "sleeve2"], [0, -19, 2, 2, "skin"]],
+  // Keep the torso proportions; move the whole upper body up so the longer legs stay visible.
+  body: [...head(3, -21), [4, -14, 4, 1, "skin"], [3, -13, 6, 6, "shirt"], [3, -8, 6, 1, "belt"]],
+  backLeg: [[4, -8, 2, 7, "pants2"], [4, -1, 3, 1, "shoe"]],
+  frontLeg: [[6, -8, 2, 7, "pants"], [6, -1, 3, 1, "shoe"]],
+  arm: [[5, -13, 2, 5, "sleeve"], [5, -8, 2, 1, "skin"]],
+  cup: [[5, -13, 2, 3, "sleeve"], [6, -11, 3, 2, "sleeve"], [9, -14, 2, 3, "cup"], [8, -11, 1, 2, "skin"]],
+  armUp: [[10, -19, 2, 6, "sleeve"], [10, -21, 2, 2, "skin"]],
+  armUpBack: [[0, -19, 2, 6, "sleeve2"], [0, -21, 2, 2, "skin"]],
   // A box of desk things, carried out the door.
-  box: [[5, -11, 2, 3, "sleeve"], [6, -9, 3, 2, "sleeve"], [10, -15, 1, 2, "leaf"], [11, -16, 1, 2, "leaf2"],
-    [8, -13, 6, 5, "cardboard"], [8, -13, 6, 1, "cardboardTop"], [9, -9, 1, 1, "skin"]],
-  pizza: [[5, -11, 2, 3, "sleeve"], [6, -9, 3, 2, "sleeve"], [8, -10, 8, 2, "pizzaBox"], [8, -12, 8, 2, "pizzaBox"], [9, -11, 4, 1, "pizzaLogo"]],
+  box: [[5, -13, 2, 3, "sleeve"], [6, -11, 3, 2, "sleeve"], [10, -17, 1, 2, "leaf"], [11, -18, 1, 2, "leaf2"],
+    [8, -15, 6, 5, "cardboard"], [8, -15, 6, 1, "cardboardTop"], [9, -11, 1, 1, "skin"]],
+  pizza: [[5, -13, 2, 3, "sleeve"], [6, -11, 3, 2, "sleeve"], [8, -12, 8, 2, "pizzaBox"], [8, -14, 8, 2, "pizzaBox"], [9, -13, 4, 1, "pizzaLogo"]],
 };
 
 // Headphones and a mic, for agents working from another machine.
@@ -50,7 +51,7 @@ export const HEADSET = { stand: headset(3, -19), sit: headset(3, -23) };
 
 // Sitting on a seat whose top is 8 units up, facing right.
 export const SIT = {
-  body: [...head(3, -23), [3, -16, 6, 6, "shirt"], [3, -10, 8, 2, "pants"], [10, -8, 2, 7, "pants"], [10, -1, 3, 1, "shoe"]],
+  body: [...head(3, -23), [3, -16, 6, 6, "shirt"], [3, -10, 8, 2, "pants"], [10, -8, 2, 5, "pants"], [10, -3, 3, 1, "shoe"]],
   arm: [[5, -16, 2, 3, "sleeve"], [6, -14, 7, 2, "sleeve"], [13, -14, 2, 1, "skin"]],
   rest: [[5, -16, 2, 5, "sleeve"], [6, -11, 3, 1, "skin"]],
   lapArm: [[5, -16, 2, 3, "sleeve"], [6, -13, 4, 2, "sleeve"], [10, -13, 1, 1, "skin"]],

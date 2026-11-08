@@ -200,10 +200,17 @@ export default class Office extends View {
     const fresh = !this.at[key] && Boolean(start);
     const at = this.at[key] ?? (start ? { ...start, spot: null } : null);
     if (!at) return (this.at[key] = { spot, x, y, fromX: x, until: 0, dur: 1 });
+    if (fresh) {
+      const dur = Math.max(400, Math.hypot(x - at.x, y - at.y) / speed);
+      this.at[key] = { ...at, fromX: at.x, until: now + dur, dur };
+      this.doorUntil = Math.max(this.doorUntil ?? 0, now + dur);
+      cx.timer.after(30, (cx) => cx.notify());
+      return this.at[key];
+    }
     if (at.spot === spot && at.x === x && at.y === y) return at;
     const dur = Math.max(400, Math.hypot(x - at.x, y - at.y) / speed);
     this.at[key] = { spot, x, y, fromX: at.x, until: now + dur, dur, face: at.face };
-    if (spot === "door" || fresh) this.doorUntil = Math.max(this.doorUntil ?? 0, now + dur);
+    if (spot === "door") this.doorUntil = Math.max(this.doorUntil ?? 0, now + dur);
     cx.timer.after(dur + 30, (cx) => cx.notify());
     return this.at[key];
   }
@@ -592,11 +599,11 @@ export default class Office extends View {
     const st = a.status;
     const hs = away ? [A.HEADSET.stand] : [];
     let body, headTop;
-    if (walking) [body, headTop] = [this.walker(pal, face, hs), 20];
+    if (walking) [body, headTop] = [this.walker(pal, face, hs), 22];
     else if (at.spot === "cooler" || at.spot === "pizza") {
       body = this.pose(pal, face, [A.STAND.backLeg, A.STAND.frontLeg, A.STAND.body, ...hs, A.STAND.cup])
         .loop("top", { from: 0, to: -1, period: 2600 + (pal.salt % 900) });
-      headTop = 20;
+      headTop = 22;
     } else if (napping) {
       body = this.pose(pal, 1, [A.SIT.body, ...(away ? [A.HEADSET.sit] : []), A.SIT.rest]).loop("top", { from: 0, to: 1.5, period: 3400 + (pal.salt % 700) });
       headTop = 24;
@@ -615,13 +622,13 @@ export default class Office extends View {
         .child(this.part(A.STAND.armUp, pal, 1).loop("top", { from: 0, to: -P, period: 260 }))
         .child(this.part(A.STAND.armUpBack, pal, 1).loop("top", { from: -P, to: 0, period: 260 }))
         .loop("top", { from: 0, to: -4, period: 420 });
-      headTop = 21;
+      headTop = 23;
     } else {
       // blocked: one hand up, bouncing; done: both hands up, hopping
       const cheer = st === "done";
       body = this.pose(pal, 1, [A.STAND.backLeg, A.STAND.frontLeg, A.STAND.body, ...hs, A.STAND.armUp, cheer ? A.STAND.armUpBack : A.STAND.arm])
         .loop("top", { from: 0, to: cheer ? -6 : -3, period: cheer ? 560 : 900 });
-      headTop = 21;
+      headTop = 23;
     }
 
     const top = (A.BOX - headTop) * P - 20;
