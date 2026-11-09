@@ -94,6 +94,8 @@ export default class Office extends View {
     this.size = { width: 1400, height: 250 };
     this.desk = {}; // address -> desk index, kept while the agent lives
     this.at = {}; // walker -> { spot, x, y, fromX, until, dur, face }
+    this.routes = {}; // walker -> { id, points, index }
+    this.entering = {}; // new agents using the door-to-floor entry route
     this.seen = {}; // address -> what we knew last render: { status, pal }
     this.idleSince = {};
     this.blockedSince = {};
@@ -106,7 +108,7 @@ export default class Office extends View {
     this.hovered = null;
     this.weather = null;
     this.started = false;
-    this.cat = { goal: "sit", desk: null, since: Date.now() };
+    this.cat = { goal: "sit", desk: null, since: Date.now(), phase: "floor" };
     this.now = new Date();
     this.incident = loadNumber("office.incident") ?? Date.now();
     saveNumber("office.incident", this.incident);
@@ -154,9 +156,11 @@ export default class Office extends View {
       const at = this.at[k];
       if (this.started && at && this.seen[k]) {
         this.leaving[k] = this.seen[k].pal;
-        this.walk(`leave:${k}`, "door", door.x, door.y, WALK_SPEED, cx, at);
+        const pos = this.position(at);
+        this.walk(`leave:${k}`, "door", door.x, door.y, WALK_SPEED, cx, { ...at, ...pos });
       }
-      delete this.desk[k]; delete this.at[k]; delete this.idleSince[k]; delete this.blockedSince[k]; delete this.seen[k];
+      delete this.desk[k]; delete this.at[k]; delete this.routes[k]; delete this.entering[k];
+      delete this.idleSince[k]; delete this.blockedSince[k]; delete this.seen[k];
     }
     const taken = new Set(Object.values(this.desk));
     for (const a of list) {
@@ -193,26 +197,59 @@ export default class Office extends View {
     }
   }
 
+  // Current interpolated position. New elements (notably leavers) do not get a
+  // previous DOM frame for GPUI's transition to animate from.
+  position(at, now = Date.now()) {
+    if (!at?.until || now >= at.until) return { x: at.x, y: at.y };
+    const linear = Math.max(0, Math.min(1, 1 - (at.until - now) / at.dur));
+    const t = linear * linear * (3 - 2 * linear);
+    const fromY = at.fromY ?? at.y;
+    return { x: at.fromX + (at.x - at.fromX) * t, y: fromY + (at.y - fromY) * t };
+  }
+
+  wakeWalk(key, until, cx) {
+    if (this.at[key]?.until !== until) return;
+    if (Date.now() < until) cx.timer.after(30, (cx) => this.wakeWalk(key, until, cx));
+    cx.notify();
+  }
+
   // Starts a walk when a walker's spot changes; returns where it is (or is heading).
   // `start`: where a new walker appears (the door), instead of at its spot.
   walk(key, spot, x, y, speed, cx, start) {
     const now = Date.now();
     const fresh = !this.at[key] && Boolean(start);
     const at = this.at[key] ?? (start ? { ...start, spot: null } : null);
-    if (!at) return (this.at[key] = { spot, x, y, fromX: x, until: 0, dur: 1 });
+    if (!at) return (this.at[key] = { spot, x, y, fromX: x, fromY: y, until: 0, dur: 1 });
     if (fresh) {
       const dur = Math.max(400, Math.hypot(x - at.x, y - at.y) / speed);
-      this.at[key] = { ...at, fromX: at.x, until: now + dur, dur };
+      this.at[key] = { ...at, spot, fromX: at.x, fromY: at.y, until: now + dur, dur };
       this.doorUntil = Math.max(this.doorUntil ?? 0, now + dur);
-      cx.timer.after(30, (cx) => cx.notify());
+      cx.timer.after(30, (cx) => this.wakeWalk(key, this.at[key].until, cx));
       return this.at[key];
     }
     if (at.spot === spot && at.x === x && at.y === y) return at;
-    const dur = Math.max(400, Math.hypot(x - at.x, y - at.y) / speed);
-    this.at[key] = { spot, x, y, fromX: at.x, until: now + dur, dur, face: at.face };
+    const from = this.position(at, now);
+    const dur = Math.max(400, Math.hypot(x - from.x, y - from.y) / speed);
+    this.at[key] = { spot, x, y, fromX: from.x, fromY: from.y, until: now + dur, dur, face: at.face };
     if (spot === "door") this.doorUntil = Math.max(this.doorUntil ?? 0, now + dur);
-    cx.timer.after(dur + 30, (cx) => cx.notify());
+    cx.timer.after(30, (cx) => this.wakeWalk(key, this.at[key].until, cx));
     return this.at[key];
+  }
+
+  // Follow simple orthogonal waypoints instead of cutting diagonally through furniture.
+  routeWalk(key, id, points, speed, cx, start) {
+    let route = this.routes[key];
+    if (!route || route.id !== id) route = this.routes[key] = { id, points, index: 0 };
+    else route.points = points;
+    let at;
+    while (route.index < points.length) {
+      const point = points[route.index];
+      at = this.walk(key, point.spot, point.x, point.y, speed, cx, route.index === 0 ? start : null);
+      if (Date.now() < at.until) break;
+      if (route.index === points.length - 1) break;
+      route.index++;
+    }
+    return { at, done: route.index === points.length - 1 && Date.now() >= at.until };
   }
 
   geometry(W, H, deskCount) {
@@ -251,10 +288,11 @@ export default class Office extends View {
     const c = this.cat;
     if (c.goal === "sleep" && this.away.includes(c.desk) && Date.now() - c.since < 60000) return false;
     if (this.away.length && Math.random() < 0.45) {
-      this.cat = { goal: "sleep", desk: this.away[Math.floor(Math.random() * this.away.length)], since: Date.now() };
+      this.cat = { goal: "sleep", desk: this.away[Math.floor(Math.random() * this.away.length)], since: Date.now(), phase: "edge" };
     } else {
       const span = g.couchX + A.COUCH.width * g.P - g.x0;
-      this.cat = { goal: "sit", desk: null, x: Math.round(g.x0 + Math.random() * span), since: Date.now() };
+      this.cat = { goal: "sit", desk: null, x: Math.round(g.x0 + Math.random() * span), since: Date.now(), phase: "floor" };
+      delete this.at.cat;
     }
     return true;
   }
@@ -284,7 +322,8 @@ export default class Office extends View {
     // The pizza: the courier walks in, leaves it on the counter, and walks out.
     const party = this.party;
     const counter = { x: g.zoneX + 2 * P, y: g.floorY };
-    const courierTrip = party ? Math.max(400, Math.hypot(counter.x - g.door.x, counter.y - g.door.y) / WALK_SPEED) : 0;
+    const courierTrip = party ? Math.max(400,
+      (Math.abs(g.floorY - g.door.y) + Math.abs(counter.x - g.door.x)) / WALK_SPEED) : 0;
     const pizzaHere = party && now >= party.start + courierTrip;
 
     // Where everyone goes. Long idlers take the couch while there's room; the rest
@@ -311,12 +350,34 @@ export default class Office extends View {
     const alarmed = here.filter((a) => a.status === "blocked" && now - (this.blockedSince[a.address] ?? now) > ALARM_AFTER);
     const people = here.map((a) => {
       const p = place[a.address];
-      const start = this.started ? g.door : null;
-      const at = this.walk(a.address, p.spot, p.x, p.y, WALK_SPEED, cx, start);
-      return { y: p.y, el: this.person(a, at, g, p.face, tabs[a.tab], alarmed.includes(a)) };
+      const d = g.deskPos(this.desk[a.address]);
+      if (this.started && !this.at[a.address] && !this.entering[a.address]) {
+        this.entering[a.address] = { id: a.address, points: [] };
+      }
+      let at;
+      if (this.entering[a.address]) {
+        const entry = this.entering[a.address];
+        const points = [{ spot: "entry-floor", x: g.door.x, y: g.floorY }];
+        if (d.back) points.push({ spot: "entry-row", x: d.x, y: g.floorY });
+        points.push({ spot: p.spot, x: p.x, y: p.y });
+        entry.points = points;
+        const result = this.routeWalk(a.address, entry.id, entry.points, WALK_SPEED, cx, g.door);
+        at = result.at;
+        if (result.done) {
+          delete this.entering[a.address];
+          delete this.routes[a.address];
+        }
+      } else {
+        at = this.walk(a.address, p.spot, p.x, p.y, WALK_SPEED, cx);
+      }
+      return { y: p.y, walking: now < at.until, el: this.person(a, at, g, p.face, tabs[a.tab], alarmed.includes(a)) };
     });
-    const backPeople = people.filter((p) => p.y < g.floorY).map((p) => p.el);
-    const frontPeople = people.filter((p) => p.y >= g.floorY).map((p) => p.el);
+    // Back-row walkers stay behind the furniture; front-row walkers belong in
+    // front of it, like the seated agents they are walking toward.
+    const walkingBackPeople = people.filter((p) => p.walking && p.y < g.floorY).map((p) => p.el);
+    const walkingFrontPeople = people.filter((p) => p.walking && p.y >= g.floorY).map((p) => p.el);
+    const backPeople = people.filter((p) => !p.walking && p.y < g.floorY).map((p) => p.el);
+    const frontPeople = people.filter((p) => !p.walking && p.y >= g.floorY).map((p) => p.el);
     const desks = Array.from({ length: deskCount }, (_, i) => {
       const pos = g.deskPos(i);
       const a = byDesk[i];
@@ -333,6 +394,7 @@ export default class Office extends View {
       .on_size_change((size, cx) => { this.size = size; cx.notify(); })
       .children([
         ...this.room(W, H, g, sky(hour, this.weatherMeta), list, all, now, when),
+        ...walkingBackPeople,
         ...desks.filter((d) => d.back).map((d) => d.el),
         ...backPeople,
         ...desks.filter((d) => !d.back).map((d) => d.el),
@@ -349,8 +411,9 @@ export default class Office extends View {
           ...(pizzaHere ? [] : [this.prop(A.PUMPKIN, g.zoneX + 13 * P, g, 11 * P)])] : []),
         ...here.flatMap((a) => this.interns(a, descendants(all, a.address), g)),
         ...this.graduates(g, now, cx),
+        ...this.leavers(g, now, cx),
+        ...walkingFrontPeople,
         ...frontPeople,
-        ...this.leavers(g, now),
         ...(party ? [this.courier(party, counter, courierTrip, g, now, cx)] : []),
         this.kitty(g, cx),
         ...(dark ? this.night(W, H, g, byDesk, deskCount, when) : []),
@@ -565,8 +628,8 @@ export default class Office extends View {
     return Object.entries(this.leaving).flatMap(([k, pal]) => {
       const at = this.at[`leave:${k}`];
       if (!at || now >= at.until) { delete this.leaving[k]; delete this.at[`leave:${k}`]; return []; }
-      return [div().id(`leave-${k}`).absolute().left(at.x).top(at.y - A.BOX * g.P).w(A.PERSON * g.P).h(A.BOX * g.P)
-        .transition("left", { duration: at.dur, easing: "ease-in-out" }).transition("top", { duration: at.dur, easing: "ease-in-out" })
+      const pos = this.position(at, now);
+      return [div().id(`leave-${k}`).absolute().left(pos.x).top(pos.y - A.BOX * g.P).w(A.PERSON * g.P).h(A.BOX * g.P)
         .child(this.walker(pal, Math.sign(at.x - at.fromX) || -1, [A.STAND.box], g.P, false))];
     });
   }
@@ -576,14 +639,18 @@ export default class Office extends View {
     const leaving = now >= party.start + trip + stay;
     if (now >= party.start + 2 * trip + stay + 100) return div();
     if (!leaving) cx.timer.after(party.start + trip + stay - now + 20, (cx) => cx.notify());
-    const goal = leaving ? g.door : counter;
-    const at = this.walk("courier", leaving ? "door" : "counter", goal.x, goal.y, WALK_SPEED, cx, g.door);
+    const floorDoor = { spot: "door-floor", x: g.door.x, y: g.floorY };
+    const floorCounter = { spot: "counter", x: counter.x, y: g.floorY };
+    const route = leaving ? [floorCounter, floorDoor, { spot: "door", x: g.door.x, y: g.door.y }]
+      : [floorDoor, floorCounter];
+    const result = this.routeWalk("courier", leaving ? "out" : "in", route, WALK_SPEED, cx, g.door);
+    const at = result.at;
     const walking = now < at.until;
     const face = walking ? Math.sign(at.x - at.fromX) || 1 : 1;
     const body = walking ? this.walker(A.COURIER, face, leaving ? [] : [A.STAND.pizza], g.P, leaving)
       : this.pose(A.COURIER, 1, [A.STAND.backLeg, A.STAND.frontLeg, A.STAND.body, A.STAND.armUp]);
-    return div().id("courier").absolute().left(at.x).top(at.y - A.BOX * g.P).w(A.PERSON * g.P).h(A.BOX * g.P)
-      .transition("left", { duration: at.dur, easing: "ease-in-out" }).transition("top", { duration: at.dur, easing: "ease-in-out" })
+    const pos = this.position(at, now);
+    return div().id("courier").absolute().left(pos.x).top(pos.y - A.BOX * g.P).w(A.PERSON * g.P).h(A.BOX * g.P)
       .child(body).when(!walking, (el) => el.child(this.bubble((A.BOX - 20) * g.P - 20, "#d94a3a").child("pizza! 🍕")));
   }
 
@@ -593,7 +660,9 @@ export default class Office extends View {
     const base = A.look(a.address);
     const pal = napping ? { ...base, eye: "#00000000" } : base;
     const away = remote(a.address);
-    const walking = Date.now() < at.until;
+    const now = Date.now();
+    const walking = now < at.until;
+    const pos = this.position(at, now);
     const face = walking ? Math.sign(at.x - at.fromX) || 1 : placeFace;
     at.face = face;
     const st = a.status;
@@ -642,9 +711,7 @@ export default class Office extends View {
     else if (st === "done") bubble = this.bubble(top, "#2f9a50").child("✓");
     at.headTop = headTop;
 
-    return div().id(`person-${a.address}`).absolute().left(at.x).top(at.y - A.BOX * P).w(A.PERSON * P).h(A.BOX * P)
-      .transition("left", { duration: at.dur, easing: "ease-in-out" })
-      .transition("top", { duration: at.dur, easing: "ease-in-out" })
+    return div().id(`person-${a.address}`).absolute().left(pos.x).top(pos.y - A.BOX * P).w(A.PERSON * P).h(A.BOX * P)
       .cursor_pointer().on_click(() => run("pane.focus", { pane: a.pane }))
       .on_hover((h, cx) => {
         if (h) this.hovered = a.address;
@@ -690,20 +757,71 @@ export default class Office extends View {
     ]);
   }
 
+  catJumpWake(until, cx) {
+    if (this.cat.phase !== "jump" || this.cat.jumpUntil !== until) return;
+    if (Date.now() < until) cx.timer.after(30, (cx) => this.catJumpWake(until, cx));
+    cx.notify();
+  }
+
   kitty(g, cx) {
     const P = g.P;
     const c = this.cat;
-    const onDesk = c.goal === "sleep";
-    const pos = onDesk ? g.deskPos(c.desk) : null;
-    const x = onDesk ? pos.x + 8 * P : (c.x ?? g.couchX - 12 * P);
-    const y = onDesk ? pos.y - 12 * P : g.floorY;
-    const at = this.walk("cat", `${c.goal}-${c.desk}-${c.since}`, x, y, CAT_SPEED, cx);
-    const walking = Date.now() < at.until;
-    if (walking) at.face = Math.sign(at.x - at.fromX) || 1;
-    const face = at.face ?? 1;
+    const now = Date.now();
+    const onDesk = c.goal === "sleep" && c.phase === "sleep";
+    const target = c.goal === "sleep" ? g.deskPos(c.desk) : null;
+    const deskX = target ? target.x + 8 * P : 0;
+    const deskY = target ? target.y - 12 * P : 0;
+    let x, y, at = null, walking = false, jumping = false;
+
+    if (c.goal === "sleep" && c.phase === "edge") {
+      // Walk to the front edge first; the jump is a separate animation.
+      const edge = this.walk("cat", `cat-edge-${c.desk}-${c.since}`, deskX, g.floorY, CAT_SPEED, cx);
+      at = edge;
+      walking = now < edge.until;
+      if (!walking) {
+        c.phase = "jump";
+        c.jumpStart = now;
+        c.jumpUntil = now + 480;
+        delete this.at.cat;
+        cx.timer.after(30, (cx) => this.catJumpWake(c.jumpUntil, cx));
+      }
+    }
+
+    if (c.goal === "sleep" && c.phase === "jump") {
+      jumping = true;
+      const t = Math.max(0, Math.min(1, 1 - (c.jumpUntil - now) / 480));
+      const baseY = g.floorY + (deskY - g.floorY) * t;
+      x = deskX;
+      y = baseY - Math.sin(Math.PI * t) * 8 * P;
+      if (now >= c.jumpUntil) {
+        c.phase = "sleep";
+        delete c.jumpStart;
+        delete c.jumpUntil;
+        x = deskX;
+        y = deskY;
+        jumping = false;
+        cx.notify();
+      }
+    } else if (c.goal === "sleep" && c.phase === "sleep") {
+      x = deskX;
+      y = deskY;
+    } else if (c.goal !== "sleep") {
+      const floorX = c.x ?? g.couchX - 12 * P;
+      at = this.walk("cat", `cat-floor-${c.since}`, floorX, g.floorY, CAT_SPEED, cx);
+      walking = now < at.until;
+      x = this.position(at, now).x;
+      y = g.floorY;
+    }
+
+    if (walking) {
+      const pos = this.position(at, now);
+      x = pos.x;
+      y = pos.y;
+    }
+    const face = jumping ? 1 : (walking ? Math.sign(at.x - at.fromX) || 1 : (at?.face ?? 1));
     const part = (list) => A.layer(face < 0 ? A.mirror(list, A.CAT) : list, A.PALETTE, A.CAT);
     let body;
-    if (walking) body = div().absolute().size_full().children([
+    if (walking || jumping) body = div().absolute().size_full().children([
       part(A.KITTY.legsA).loop("left", { from: -1, to: 1.5, period: 360, easing: "linear" }),
       part(A.KITTY.legsB).loop("left", { from: 1.5, to: -1, period: 360, easing: "linear" }),
       part(A.KITTY.body).loop("top", { from: 0, to: -1, period: 360 }),
@@ -713,10 +831,7 @@ export default class Office extends View {
       div().absolute().left(9 * P).top((A.BOX - 10) * P).text_size(9).font_bold().text_color("#6b5fb5").frames(["z", "zz", "zzz", ""], 800),
     ]);
     else body = part(A.KITTY.sit);
-    return div().id("cat").absolute().left(at.x).top(at.y - A.BOX * P).w(A.CAT * P).h(A.BOX * P)
-      .transition("left", { duration: at.dur, easing: "ease-in-out" })
-      .transition("top", { duration: at.dur, easing: "ease-in-out" })
-      .child(body);
+    return div().id("cat").absolute().left(x).top(y - A.BOX * P).w(A.CAT * P).h(A.BOX * P).child(body);
   }
 
   // After dark: the room dims, lamps light the occupied desks, and busy screens glow.
