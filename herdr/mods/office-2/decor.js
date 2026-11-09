@@ -352,9 +352,11 @@ export function lifeProps(g, night, paperPulse) {
     div().absolute().left(g.coolerX + 12 * P).top(floor - 8 * P).w(6 * P).h(8 * P).rounded(P).bg(night ? "#3e4653" : "#72777b"),
     div().absolute().left(g.coolerX + 11 * P).top(floor - 9 * P).w(8 * P).h(2 * P).rounded(P).bg(dark),
     div().absolute().left(g.coolerX + 14 * P).top(floor - 7 * P).w(2 * P).h(P).bg(night ? "#596574" : "#9ba0a2"),
-    // Cat bowl by the couch: a low, readable pixel accent rather than another large prop.
-    div().absolute().left(g.couchX + 9 * P).top(floor - 3 * P).w(8 * P).h(2 * P).rounded(P).bg(night ? "#53647e" : "#b56d4f"),
-    div().absolute().left(g.couchX + 11 * P).top(floor - 4 * P).w(4 * P).h(P).rounded(P).bg("#e0b43d"),
+    // Cat bowl by the couch: rim, inside, and food make it read as a bowl.
+    div().absolute().left(g.couchX + 8 * P).top(floor - 3 * P).w(10 * P).h(3 * P).rounded(2 * P).bg(night ? "#53647e" : "#b56d4f"),
+    div().absolute().left(g.couchX + 9 * P).top(floor - 4 * P).w(8 * P).h(P).rounded(P).bg(night ? "#8298c3" : "#e5ad78"),
+    div().absolute().left(g.couchX + 10 * P).top(floor - 3 * P).w(6 * P).h(P).rounded(P).bg(night ? "#263247" : "#6b4030"),
+    div().absolute().left(g.couchX + 12 * P).top(floor - 3 * P).w(3 * P).h(P).rounded(P).bg("#e0b43d"),
   ];
 }
 
@@ -365,8 +367,9 @@ export function petCorner(g, night) {
   return [
     // Cat bed and scratching post, tucked beside the sofa.
     div().absolute().left(g.couchX + 22 * P).top(floor - 5 * P).w(10 * P).h(4 * P).rounded(3 * P).bg(night ? "#4b6497" : "#c47d58")
-      .border_1().border_color(night ? "#8298c3" : "#e5ad78"),
+      .border_2().border_color(night ? "#8298c3" : "#e5ad78"),
     div().absolute().left(g.couchX + 24 * P).top(floor - 7 * P).w(6 * P).h(3 * P).rounded(3 * P).bg(night ? "#7692c5" : "#e7ae7d"),
+    div().absolute().left(g.couchX + 25 * P).top(floor - 6 * P).w(4 * P).h(P).rounded(P).bg(night ? "#a8bbdc" : "#f1c18f"),
     div().absolute().left(g.couchX + 36 * P).top(floor - 20 * P).w(3 * P).h(18 * P).bg(ink)
       .border_1().border_color(night ? "#71809a" : "#8b634a"),
     div().absolute().left(g.couchX + 32 * P).top(floor - 22 * P).w(11 * P).h(3 * P).rounded(2 * P).bg(ink),

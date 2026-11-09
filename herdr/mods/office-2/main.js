@@ -149,15 +149,25 @@ export default class Office extends View {
 
   // Desks are handed out once, lowest free first, so nobody swaps seats. Agents that
   // closed head for the door with a box.
-  seat(list, door, cx) {
+  seat(list, g, cx) {
+    const { door, floorY } = g;
     const live = new Set(list.map((a) => a.address));
     for (const k of Object.keys(this.desk)) {
       if (live.has(k)) continue;
       const at = this.at[k];
       if (this.started && at && this.seen[k]) {
-        this.leaving[k] = this.seen[k].pal;
         const pos = this.position(at);
-        this.walk(`leave:${k}`, "door", door.x, door.y, WALK_SPEED, cx, { ...at, ...pos });
+        const id = `${k}:${Date.now()}`;
+        const points = [];
+        // Only add a vertical leg when the agent is in the back row. Avoid a
+        // zero-distance waypoint, which made a leaver stand and walk in place.
+        if (Math.abs(pos.y - floorY) > 1) points.push({ spot: `leave-floor:${k}`, x: pos.x, y: floorY });
+        points.push(
+          { spot: `leave-door:${k}`, x: door.x, y: floorY },
+          { spot: "door", x: door.x, y: door.y },
+        );
+        this.leaving[k] = { pal: this.seen[k].pal, id, points };
+        this.routeWalk(`leave:${k}`, id, points, WALK_SPEED, cx, { ...at, ...pos });
       }
       delete this.desk[k]; delete this.at[k]; delete this.routes[k]; delete this.entering[k];
       delete this.idleSince[k]; delete this.blockedSince[k]; delete this.seen[k];
@@ -309,7 +319,7 @@ export default class Office extends View {
     A.setScale(Math.max(3, Math.min(6, Math.floor(H / 60))));
     const deskCount = Math.max(MIN_DESKS, here.length, ...Object.values(this.desk).map((i) => i + 1));
     const g = (this.g = this.geometry(W, H, deskCount));
-    this.seat(here, g.door, cx);
+    this.seat(here, g, cx);
     this.track(list, now, cx);
     const P = g.P;
     const byDesk = {};
@@ -624,13 +634,17 @@ export default class Office extends View {
   }
 
   // Closed agents carrying their box out.
-  leavers(g, now) {
-    return Object.entries(this.leaving).flatMap(([k, pal]) => {
-      const at = this.at[`leave:${k}`];
-      if (!at || now >= at.until) { delete this.leaving[k]; delete this.at[`leave:${k}`]; return []; }
+  leavers(g, now, cx) {
+    return Object.entries(this.leaving).flatMap(([k, leave]) => {
+      const result = this.routeWalk(`leave:${k}`, leave.id, leave.points, WALK_SPEED, cx);
+      const at = result.at;
+      if (!at || result.done) {
+        delete this.leaving[k]; delete this.at[`leave:${k}`]; delete this.routes[`leave:${k}`];
+        return [];
+      }
       const pos = this.position(at, now);
       return [div().id(`leave-${k}`).absolute().left(pos.x).top(pos.y - A.BOX * g.P).w(A.PERSON * g.P).h(A.BOX * g.P)
-        .child(this.walker(pal, Math.sign(at.x - at.fromX) || -1, [A.STAND.box], g.P, false))];
+        .child(this.walker(leave.pal, Math.sign(at.x - at.fromX) || -1, [A.STAND.box], g.P, false))];
     });
   }
 
