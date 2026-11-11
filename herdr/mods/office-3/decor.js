@@ -233,15 +233,15 @@ const WX_BG = {
   clouds: "#c6d8e4", fog: "#b9c6d2", drizzle: "#a3b6c8", rain: "#7d95ad", snow: "#9fb6cc", storm: "#4c5b74",
 };
 const WX_ICONS = {
-  clear: "mods/office-2/icons/sun.png",
-  clearNight: "mods/office-2/icons/moon.png",
-  partly: "mods/office-2/icons/partly-cloudy.png",
-  clouds: "mods/office-2/icons/cloud.png",
-  fog: "mods/office-2/icons/fog.png",
-  drizzle: "mods/office-2/icons/drizzle.png",
-  rain: "mods/office-2/icons/rain.png",
-  snow: "mods/office-2/icons/snow.png",
-  storm: "mods/office-2/icons/storm.png",
+  clear: "mods/office-3/icons/sun.png",
+  clearNight: "mods/office-3/icons/moon.png",
+  partly: "mods/office-3/icons/partly-cloudy.png",
+  clouds: "mods/office-3/icons/cloud.png",
+  fog: "mods/office-3/icons/fog.png",
+  drizzle: "mods/office-3/icons/drizzle.png",
+  rain: "mods/office-3/icons/rain.png",
+  snow: "mods/office-3/icons/snow.png",
+  storm: "mods/office-3/icons/storm.png",
 };
 
 function weatherIcon(kind, dark) {
@@ -257,17 +257,20 @@ export function weatherBoard(x, y, timeText, kind, meta, dark) {
   const wind = meta?.wind == null ? null : `${meta.wind} km/h`;
   const hum = meta?.hum == null ? null : `${meta.hum}%`;
   const place = meta?.place ?? "LOCAL";
-  return div().absolute().left(x).top(y).w(150).rounded(3).overflow_hidden().border_2().border_color("#84958b")
-    .child(div().w_full().h(20).px(6).bg("#3a5a48").flex().items_center().justify_between().text_color("#eef5f0")
+  const panel = dark ? "#dce4e5" : "#eef2ed";
+  const ink = dark ? "#202a38" : "#1d1d24";
+  const muted = dark ? "#536273" : "#5a6b5f";
+  return div().absolute().left(x).top(y).w(150).rounded(3).overflow_hidden().border_2().border_color(dark ? "#52647a" : "#84958b")
+    .child(div().w_full().h(20).px(6).bg(dark ? "#26364a" : "#3a5a48").flex().items_center().justify_between().text_color("#eef5f0")
       .child(div().truncate().text_size(9).font_bold().child(place))
       .child(div().text_size(11).font_bold().child(timeText)))
-    .child(div().flex().items_center().gap(8).p(6).bg("#eef2ed")
+    .child(div().flex().items_center().gap(8).p(6).bg(panel)
       .child(div().w(56).h(40).relative().overflow_hidden().rounded(3).child(weatherIcon(kind, dark)))
       .child(div().flex_1().flex().flex_col().gap(3)
         .child(div().flex().items_end().gap(4)
-          .child(div().text_size(19).font_bold().text_color("#1d1d24").child(temp))
-          .child(div().text_size(9).font_bold().text_color("#5a6b5f").pb(1).child(cond)))
-        .child(div().text_size(9).text_color("#6b7a72").child([wind, hum].filter(Boolean).join(" · ") || "—"))));
+          .child(div().text_size(19).font_bold().text_color(ink).child(temp))
+          .child(div().text_size(9).font_bold().text_color(muted).pb(1).child(cond)))
+        .child(div().text_size(9).text_color(muted).child([wind, hum].filter(Boolean).join(" · ") || "—"))));
 }
 
 // Small architectural details that keep the short office strip from feeling flat.
@@ -395,25 +398,25 @@ export function deskAccent(status, P, away, overtime) {
 }
 
 export function whiteboard(x, y, rows) {
-  const shown = rows.filter(([, , , show]) => show !== false);
+  const shown = rows.filter(([, , count, show]) => show !== false && (show === true || count !== 0));
   return div().absolute().left(x).top(y).w(150).px(8).pt(6).pb(7).bg("#fbfbf8")
-    .border_3().border_color("#a6adb8").rounded(2).flex().flex_col().text_size(10).font_bold().gap(3)
-    .child(div().flex().items_center().justify_between().text_color("#536070")
+    .border_1().border_color("#7f8a96").rounded(0).flex().flex_col().text_size(10).font_bold().gap(3)
+    .child(div().flex().items_center().justify_between().text_color("#3f4b58")
       .child("TEAM STATUS")
-      .child(div().size(6).rounded_full().bg("#58c26b").loop("opacity", { from: 0.35, to: 1, period: 1400 })))
-    .child(div().h(1).bg("#e6e9ec"))
+      .child(div().text_size(8).text_color("#7a8791").child("LIVE")))
+    .child(div().h(1).bg("#d8dee1"))
     .child(div().flex().flex_col().gap(4).children(shown.map(([color, label, count]) =>
       div().flex().items_center().justify_between()
         .child(div().flex().items_center().gap(6)
           .child(div().size(6).rounded(1).bg(color).flex_none())
           .child(div().text_color("#3a4350").child(label)))
-        .child(div().text_color("#6b7a72").child(String(count))))))
-    .child(div().h(4).rounded(1).bg("#dfe4e8"));
+        .child(div().w(16).text_color("#4f5d69").text_size(10).child(String(count))))))
+    .child(div().h(3).rounded(1).bg("#dfe4e8"));
 }
 
 // "DAYS CLEAR" resets to a blinking 0 while someone is blocked.
 export function incidentSign(x, y, h, days, now) {
-  return div().absolute().left(x).top(y).w(112).h(Math.min(h, 74)).p(5).bg("#f6d44c").border_3().border_color(INK)
+  return div().absolute().left(x).top(y).w(112).h(Math.min(h, 74)).p(5).bg("#f6d44c").border_1().border_color(INK)
     .flex().flex_col().items_center().justify_between().text_color(INK)
     .child(div().text_size(10).font_bold().child("DAYS CLEAR"))
     .child(div().px(10).rounded(3).bg("#1d1d24").text_size(22).font_bold().text_color(now ? "#ff5a5a" : "#7dff9a")

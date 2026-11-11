@@ -553,8 +553,8 @@ export default class Office extends View {
 
   sticky(branch, P) {
     return div().absolute().left(18 * P).top((PERSON_FRAME.height - 26) * P).w(10 * P).h(5 * P).px(2).bg("#f6e27a")
-      .border_1().border_color("#d8bf4a").flex().items_center().overflow_hidden()
-      .text_size(9).text_color("#4a3a10").child(div().truncate().child(branch));
+      .border_1().border_color("#b99b32").flex().items_center().overflow_hidden()
+      .text_size(9).font_bold().text_color("#4a3a10").child(div().truncate().child(branch));
   }
 
   ding(P) {
@@ -586,11 +586,12 @@ export default class Office extends View {
 
   plate(a) {
     const focused = a.focused;
+    const remoteText = remote(a.address) ? "REMOTE" : null;
     return div().max_w((DESK_FRAME.width - 8) * (this.g?.P ?? DEFAULT_SCALE)).h(16).px(5).gap(4).rounded(4).flex().items_center()
-      .bg(focused ? "#fff6dd" : "#00000040").text_size(11).text_color(focused ? "#3b2a1a" : "#fffaf0")
+      .bg(focused ? "#fff6dd" : "#27313bcc").text_size(11).font_bold().text_color(focused ? "#3b2a1a" : "#fffaf0")
       .child(div().size(6).flex_none().rounded_full().bg(STATUS[a.status] ?? STATUS.idle))
       .child(this.spaceTile(a.space))
-      .when(remote(a.address), (el) => el.child(div().flex_none().text_size(10).text_color("#fffaf0").child("🎧")))
+      .when(Boolean(remoteText), (el) => el.child(div().flex_none().text_size(8).text_color(focused ? "#8a6a2d" : "#c9d7e5").child(remoteText)))
       .child(div().truncate().child(a.space_name + (a.tab_name ? ` · ${a.tab_name}` : "")));
   }
 
@@ -895,7 +896,7 @@ export default class Office extends View {
   }
 
   bubble(top, color, p = DEFAULT_SCALE) {
-    return div().absolute().left((PERSON_FRAME.width * p) / 2 - 4).top(top).px(5).h(16).flex().items_center().rounded(6)
-      .bg("#fffdf7").border_1().border_color("#3b3b44").text_size(11).font_bold().text_color(color).whitespace_nowrap();
+    return div().absolute().left((PERSON_FRAME.width * p) / 2 - 4).top(top).px(5).h(16).flex().items_center().rounded(5)
+      .bg("#fffdf7").border_1().border_color(color).text_size(11).font_bold().text_color(color).whitespace_nowrap();
   }
 }
