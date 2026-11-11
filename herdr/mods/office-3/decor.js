@@ -3,7 +3,7 @@
 import { div, image } from "gpui-kit";
 import { run } from "herdr";
 import * as A from "./art.js";
-import { renderPart, frame } from "./sprite.js";
+import { renderPart } from "./sprite.js";
 
 const WOOD = "#7a5c3e";
 const INK = "#3b3b44";

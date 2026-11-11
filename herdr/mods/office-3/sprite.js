@@ -1,10 +1,5 @@
 import { div } from "gpui-kit";
 
-export function frame(width, height, anchorX = 0, anchorY = height) {
-  return { width, height, anchorX, anchorY };
-}
-
-
 export function renderPart(list, frameDef, palette, scale = 1, face = 1) {
   const mirrored = face < 0
     ? list.map(([x, y, width, height, color]) => [frameDef.width - x - width, y, width, height, color])

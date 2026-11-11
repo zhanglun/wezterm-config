@@ -503,13 +503,12 @@ export default class Office extends View {
       .text_size(12).text_color("#fffaf0").flex().justify_center().child("Nobody's in yet. Start an agent and they'll show up.");
   }
 
-  renderSpriteRects(rects, palette, scale) {
-    return renderPart(rects, DESK_FRAME, palette, scale);
+  renderSprite(sprite, palette, scale) {
+    return renderPart(sprite.rects, sprite.frame, palette, scale);
   }
 
   prop(sprite, x, g, lift = 0) {
-    const { frame, rects } = sprite;
-    return actor(frame, x, g.floorY - lift, [renderPart(rects, frame, A.PALETTE, g.P)], g.P);
+    return actor(sprite.frame, x, g.floorY - lift, [this.renderSprite(sprite, A.PALETTE, g.P)], g.P);
   }
 
   // A desk with its chair, monitor, bell and lamp, the branch on a sticky note, and the
@@ -522,21 +521,20 @@ export default class Office extends View {
     const done = st === "done" && !away;
     const overtime = st === "working" && tab?.working_since && Date.now() - tab.working_since > MUGS_AFTER;
     const plate = a ? this.plate(a) : null;
-    return div().id(`desk-${i}`).absolute().left(pos.x).top(pos.y - DESK_FRAME.height * P).w(DESK_FRAME.width * P).h(DESK_FRAME.height * P + 28)
-      .when(Boolean(a), (el) => el.cursor_pointer().on_click(() => run("pane.focus", { pane: a.pane })))
-      .children([
-        this.renderSpriteRects(A.CHAIR_SPRITE.rects, pal, P),
-        this.renderSpriteRects(A.DESK_SPRITE.rects, pal, P),
+    return actor(DESK_FRAME, pos.x, pos.y, [
+        this.renderSprite(A.CHAIR_SPRITE, pal, P),
+        this.renderSprite(A.DESK_SPRITE, pal, P),
 
-        ...(overtime ? [renderPart(A.MUG_PILE_SPRITE.rects, A.MUG_PILE_SPRITE.frame, pal, P)] : []),
+        ...(overtime ? [this.renderSprite(A.MUG_PILE_SPRITE, pal, P)] : []),
         ...D.deskAccent(st, P, away, overtime),
         this.screen(away ? "idle" : st, away, P),
         ...(branch ? [this.sticky(branch, P)] : []),
-        renderPart(A.BELL_SPRITE.rects, A.BELL_SPRITE.frame, pal, P)
+        this.renderSprite(A.BELL_SPRITE, pal, P)
           .when(done, (el) => el.loop("left", { from: -1.5, to: 1.5, period: 160 })),
         ...(done ? [this.ding(P), ...this.confetti(P, a.address)] : []),
         ...(plate ? [plate.absolute().left(6 * P).top(pos.back ? (PERSON_FRAME.height - 29) * P : PERSON_FRAME.height * P + 6)] : []),
-      ]);
+      ], P).id(`desk-${i}`)
+      .when(Boolean(a), (el) => el.cursor_pointer().on_click(() => run("pane.focus", { pane: a.pane })));
   }
 
   screen(st, screensaver, P) {
@@ -858,7 +856,7 @@ export default class Office extends View {
     ]);
     else if (onDesk) body = div().absolute().size_full().children([
       part(A.KITTY.sleep).loop("top", { from: 0, to: 0.8, period: 2400 }),
-      div().absolute().left(9 * P).top((PERSON_FRAME.height - 10) * P).text_size(10).font_bold().text_color("#6b5fb5").frames(["z", "zz", "zzz", ""], 800),
+      div().absolute().left(9 * P).top((CAT_FRAME.height - 10) * P).text_size(10).font_bold().text_color("#6b5fb5").frames(["z", "zz", "zzz", ""], 800),
     ]);
     else body = part(A.KITTY.sit);
     return actor(CAT_FRAME, x, y, [body], P).id("cat");
