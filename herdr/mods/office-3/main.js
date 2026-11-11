@@ -8,7 +8,7 @@
 // Hover anyone to see what they're working on; click them to go to their terminal.
 import { View, div, svg } from "gpui-kit";
 import { actor, renderPart } from "./sprite.js";
-import { agents, terminals, spaces, panes, shared, run, setAgentOrder } from "herdr";
+import { agents, terminals, spaces, panes, shared, run, setAgentOrder, fonts } from "herdr";
 import * as A from "./art.js";
 import * as D from "./decor.js";
 
@@ -33,6 +33,9 @@ const CODE = ["#7fd1b9", "#f2b866", "#9aa8ff", "#e88fb0"];
 const CONFETTI = ["#e05252", "#e0b43d", "#58b368", "#3d8be0", "#9b6bdc", "#e05c8c"];
 const STATUS = { working: "#3d8be0", blocked: "#e05252", done: "#58c26b", idle: "#9aa0aa" };
 const DEFAULT_SCALE = 3;
+const PIXEL_FONT = "Fusion Pixel 12px Prop zh_hans";
+// Keep office-3 portable: absent local font inherits Herdr's default face.
+const UI_FONT = fonts().includes(PIXEL_FONT) ? PIXEL_FONT : null;
 const PERSON_FRAME = A.PERSON_FRAME;
 const CAT_FRAME = A.CAT_FRAME;
 const DESK_FRAME = A.DESK_SPRITE.frame;
@@ -405,6 +408,7 @@ export default class Office extends View {
     this.started = true;
 
     return div().id("office").size_full().relative().overflow_hidden().bg("#efe3cf")
+      .when(UI_FONT, (el) => el.font_family(UI_FONT))
       .on_size_change((size, cx) => { this.size = size; cx.notify(); })
       .children([
         ...this.room(W, H, g, sky(hour, this.weatherMeta), list, all, now, when),
@@ -496,7 +500,7 @@ export default class Office extends View {
 
   sign(W, g) {
     return div().absolute().left(W / 2 - 140).top(g.wallBottom - 34).w(280).py(4).rounded(4).bg("#00000033")
-      .text_size(11).text_color("#fffaf0").flex().justify_center().child("Nobody's in yet. Start an agent and they'll show up.");
+      .text_size(12).text_color("#fffaf0").flex().justify_center().child("Nobody's in yet. Start an agent and they'll show up.");
   }
 
   renderSpriteRects(rects, palette, scale) {
@@ -552,11 +556,11 @@ export default class Office extends View {
   sticky(branch, P) {
     return div().absolute().left(18 * P).top((PERSON_FRAME.height - 26) * P).w(10 * P).h(5 * P).px(2).bg("#f6e27a")
       .border_1().border_color("#d8bf4a").flex().items_center().overflow_hidden()
-      .text_size(7).text_color("#4a3a10").child(div().truncate().child(branch));
+      .text_size(9).text_color("#4a3a10").child(div().truncate().child(branch));
   }
 
   ding(P) {
-    return div().absolute().left(15 * P).top((PERSON_FRAME.height - 21) * P).text_size(10).font_bold().text_color("#b8860b")
+    return div().absolute().left(15 * P).top((PERSON_FRAME.height - 21) * P).text_size(11).font_bold().text_color("#b8860b")
       .child("ding!").loop("opacity", { from: 0, to: 1, period: 640 });
   }
 
@@ -577,7 +581,7 @@ export default class Office extends View {
     const icon = (shared("space.icons") ?? {})[id];
     const c = (shared("space.colors") ?? {})[id] ?? "ansi6";
     const fill = c.startsWith("#") ? c : MARK[c] ?? "#22a99a";
-    return div().size(12).flex_none().rounded(3).bg(fill).flex().items_center().justify_center().text_size(8).text_color("#ffffff")
+    return div().size(12).flex_none().rounded(3).bg(fill).flex().items_center().justify_center().text_size(9).text_color("#ffffff")
       .when(Boolean(icon?.svg), (el) => el.child(svg(icon.svg).size(8)))
       .when(Boolean(icon?.text), (el) => el.child(icon.text));
   }
@@ -585,10 +589,10 @@ export default class Office extends View {
   plate(a) {
     const focused = a.focused;
     return div().max_w((DESK_FRAME.width - 8) * (this.g?.P ?? DEFAULT_SCALE)).h(16).px(5).gap(4).rounded(4).flex().items_center()
-      .bg(focused ? "#fff6dd" : "#00000040").text_size(10).text_color(focused ? "#3b2a1a" : "#fffaf0")
+      .bg(focused ? "#fff6dd" : "#00000040").text_size(11).text_color(focused ? "#3b2a1a" : "#fffaf0")
       .child(div().size(6).flex_none().rounded_full().bg(STATUS[a.status] ?? STATUS.idle))
       .child(this.spaceTile(a.space))
-      .when(remote(a.address), (el) => el.child(div().flex_none().text_size(9).text_color("#fffaf0").child("🎧")))
+      .when(remote(a.address), (el) => el.child(div().flex_none().text_size(10).text_color("#fffaf0").child("🎧")))
       .child(div().truncate().child(a.space_name + (a.tab_name ? ` · ${a.tab_name}` : "")));
   }
 
@@ -616,7 +620,7 @@ export default class Office extends View {
     });
     if (kids.length > shown.length)
       els.push(div().absolute().left(x0 + 3 * 8 * P).top(pos.y - 14 * P).px(4).rounded(4).bg("#00000055")
-        .text_size(10).text_color("#fffaf0").child(`+${kids.length - shown.length}`));
+        .text_size(11).text_color("#fffaf0").child(`+${kids.length - shown.length}`));
     return els;
   }
 
@@ -754,7 +758,7 @@ export default class Office extends View {
     const y = at.y - PERSON_FRAME.height * P + (PERSON_FRAME.height - (at.headTop ?? 22)) * P;
     return div().absolute().left(Math.max(4, x - 20)).top(Math.max(2, y - 54))
       .child(div().max_w(260).px(8).py(4).rounded(10).bg("#ffffff").border_1().border_color("#3b3b44")
-        .text_size(10).text_color("#3b3b44").child(div().truncate().child(`💭 ${text}`)))
+        .text_size(11).text_color("#3b3b44").child(div().truncate().child(`💭 ${text}`)))
       .child(div().absolute().left(16).top(26).size(7).rounded_full().bg("#ffffff").border_1().border_color("#3b3b44"))
       .child(div().absolute().left(22).top(35).size(4).rounded_full().bg("#ffffff").border_1().border_color("#3b3b44"));
   }
@@ -854,7 +858,7 @@ export default class Office extends View {
     ]);
     else if (onDesk) body = div().absolute().size_full().children([
       part(A.KITTY.sleep).loop("top", { from: 0, to: 0.8, period: 2400 }),
-      div().absolute().left(9 * P).top((PERSON_FRAME.height - 10) * P).text_size(9).font_bold().text_color("#6b5fb5").frames(["z", "zz", "zzz", ""], 800),
+      div().absolute().left(9 * P).top((PERSON_FRAME.height - 10) * P).text_size(10).font_bold().text_color("#6b5fb5").frames(["z", "zz", "zzz", ""], 800),
     ]);
     else body = part(A.KITTY.sit);
     return actor(CAT_FRAME, x, y, [body], P).id("cat");
@@ -894,6 +898,6 @@ export default class Office extends View {
 
   bubble(top, color, p = DEFAULT_SCALE) {
     return div().absolute().left((PERSON_FRAME.width * p) / 2 - 4).top(top).px(5).h(16).flex().items_center().rounded(6)
-      .bg("#fffdf7").border_1().border_color("#3b3b44").text_size(10).font_bold().text_color(color).whitespace_nowrap();
+      .bg("#fffdf7").border_1().border_color("#3b3b44").text_size(11).font_bold().text_color(color).whitespace_nowrap();
   }
 }
