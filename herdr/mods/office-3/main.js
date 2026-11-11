@@ -499,8 +499,9 @@ export default class Office extends View {
   }
 
   sign(W, g) {
-    return div().absolute().left(W / 2 - 140).top(g.wallBottom - 34).w(280).py(4).rounded(4).bg("#00000033")
-      .text_size(12).text_color("#fffaf0").flex().justify_center().child("Nobody's in yet. Start an agent and they'll show up.");
+    return div().absolute().left(W / 2 - 140).top(g.wallBottom - 34).w(280).py(4).bg("#26313dcc")
+      .border_1().border_color("#657585").text_size(10).text_color("#eef5f0").flex().justify_center()
+      .child("NO AGENTS · START ONE TO OPEN THE OFFICE");
   }
 
   renderSprite(sprite, palette, scale) {
@@ -870,12 +871,12 @@ export default class Office extends View {
     const [sx, sy] = A.DESK_SPRITE.screen;
     const els = [
       ...(this.weather === "storm" ? [div().absolute().left(0).top(0).w(W).h(H).bg("#d8edff")
-        .loop("opacity", { from: 0, to: 0.12, period: 4200, easing: "ease-in" })] : []),
+        .loop("opacity", { from: 0, to: 0.08, period: 5200, easing: "ease-in" })] : []),
       // Keep the room cozy, not pitch-black: a light wash only, then warm pools under
       // the ceiling lamps and big halos on every occupied desk.
-      div().absolute().left(0).top(0).w(W).h(H).bg("#0b1030").opacity(0.28),
+      div().absolute().left(0).top(0).w(W).h(H).bg("#0b1030").opacity(0.32),
       ...[Math.max(90, g.doorX + 110), Math.round(W * 0.5), Math.min(W - 90, g.zoneX + 160)].map((lx) =>
-        div().absolute().left(lx - 75).top(8).w(150).h(95).rounded_full().bg("#ffe6a3").opacity(0.1)),
+        div().absolute().left(lx - 75).top(8).w(150).h(95).rounded_full().bg("#ffe6a3").opacity(0.08)),
     ];
     if (when === "winter" || when === "newyear") els.push(...D.stringLights(W, 2));
     for (let i = 0; i < deskCount; i++) {
@@ -883,12 +884,12 @@ export default class Office extends View {
       if (!a || this.at[a.address]?.spot !== "desk") continue;
       const pos = g.deskPos(i);
       const top = pos.y - PERSON_FRAME.height * P;
-      els.push(div().absolute().left(pos.x + (bx - 11) * P).top(top + by * P - 8 * P).size(32 * P).rounded_full().bg("#ffd27a").opacity(0.09));
-      els.push(div().absolute().left(pos.x + (bx - 8) * P).top(top + by * P - 6 * P).size(22 * P).rounded_full().bg("#ffd27a").opacity(0.24));
+      els.push(div().absolute().left(pos.x + (bx - 7) * P).top(top + by * P - 2 * P).w(24 * P).h(8 * P).bg("#ffd27a").opacity(0.06));
+      els.push(div().absolute().left(pos.x + (bx - 4) * P).top(top + by * P - P).w(14 * P).h(5 * P).bg("#ffd27a").opacity(0.14));
       els.push(div().absolute().left(pos.x + bx * P).top(top + by * P).w(bw * P).h(bh * P).bg("#fff2b0"));
       if (a.status !== "idle") {
         els.push(div().absolute().left(pos.x + (sx - 5) * P).top(top + (sy - 5) * P).w(20 * P).h(17 * P).rounded(7 * P)
-          .bg({ working: "#7fb6ff", blocked: "#ff6b6b", done: "#6be38b" }[a.status]).opacity(0.22));
+          .bg({ working: "#7fb6ff", blocked: "#ff6b6b", done: "#6be38b" }[a.status]).opacity(0.18));
         els.push(div().absolute().left(pos.x).top(top).w(DESK_FRAME.width * P).h(DESK_FRAME.height * P).child(this.screen(a.status, false, P)));
       }
     }

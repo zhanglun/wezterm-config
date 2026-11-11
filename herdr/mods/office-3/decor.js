@@ -288,7 +288,7 @@ export function ceilingLights(xs) {
   return xs.flatMap((x, k) => [
     div().absolute().left(x).top(5).w(1).h(10).bg("#80694f"),
     div().absolute().left(x - 10).top(14).w(21).h(3).rounded(2).bg("#c5a66f"),
-    div().absolute().left(x - 15).top(17).w(31).h(12).rounded_full().bg(k % 2 ? "#ffe6a3" : "#fff1c2").opacity(0.16),
+    div().absolute().left(x - 15).top(17).w(31).h(12).rounded_full().bg(k % 2 ? "#ffe6a3" : "#fff1c2").opacity(0.11),
   ]);
 }
 
@@ -310,7 +310,7 @@ export function roomDetails(W, H, g, night, weather) {
     div().absolute().left(g.couchX + 3 * P).top(floor - 3 * P).w((A.COUCH_SPRITE.frame.width - 6) * P).h(P).bg(night ? "#687fae" : "#d4a06f").opacity(0.85),
     div().absolute().left(g.couchX - 10 * P).top(floor - 24 * P).w(2 * P).h(22 * P).bg("#594638"),
     div().absolute().left(g.couchX - 14 * P).top(floor - 26 * P).w(10 * P).h(3 * P).rounded(2 * P).bg(warm),
-    div().absolute().left(g.couchX - 18 * P).top(floor - 28 * P).w(18 * P).h(12 * P).rounded_full().bg(warm).opacity(night ? 0.22 : 0.1),
+    div().absolute().left(g.couchX - 18 * P).top(floor - 28 * P).w(18 * P).h(12 * P).rounded_full().bg(warm).opacity(night ? 0.16 : 0.1),
     // blue cooler indicator and a small coffee-machine status light
     div().absolute().left(g.coolerX + 3 * P).top(floor - 18 * P).w(2 * P).h(2 * P).rounded_full().bg(cool)
       .loop("opacity", { from: 0.35, to: 1, period: 1800 }),
@@ -323,7 +323,7 @@ export function roomDetails(W, H, g, night, weather) {
     // Rain/blue reflection stays at the glass side; warm room lights counter it.
     ...((weather === "rain" || weather === "storm" || weather === "drizzle")
       ? [div().absolute().right(0).top(0).w(Math.max(100, W * 0.28)).h(floor).bg(night ? "#5284bd" : "#8fc7e8").opacity(night ? 0.08 : 0.045),
-         div().absolute().right(Math.max(20, W * 0.08)).top(floor - 10 * P).w(70 * P).h(P).bg(night ? "#7da9d2" : "#d4edf7").opacity(0.22)
+         div().absolute().right(Math.max(20, W * 0.08)).top(floor - 10 * P).w(70 * P).h(P).bg(night ? "#7da9d2" : "#d4edf7").opacity(0.16)
            .loop("left", { from: -8 * P, to: 8 * P, period: 4200 })] : []),
   ];
 }
@@ -462,8 +462,8 @@ export function videoWall(x, y, h, remotes) {
     const face = div().absolute().left(-1).top(-(A.PERSON_FRAME.height - 21) * p + 4).w(A.PERSON_FRAME.width * p).h(A.PERSON_FRAME.height * p)
       .children([...A.STAND.body, ...A.HEADSET.stand].map((rect) => renderPart([[rect[0], rect[1], rect[2], rect[3], rect[4]]], A.PERSON_FRAME, r.pal, p)))
       .when(st === "working", (el) => el.loop("top", { from: -(A.PERSON_FRAME.height - 21) * p + 4, to: -(A.PERSON_FRAME.height - 21) * p + 2, period: 320 }));
-    return div().id(`call-${r.address}`).w(48).h(48).relative().overflow_hidden().rounded(3).bg("#24425a")
-      .border_2().border_color(ring[st] ?? ring.idle).cursor_pointer().tooltip(r.title)
+    return div().id(`call-${r.address}`).w(48).h(48).relative().overflow_hidden().rounded(0).bg("#24425a")
+      .border_1().border_color(ring[st] ?? ring.idle).cursor_pointer().tooltip(r.title)
       .on_click(() => run("pane.focus", { pane: r.pane }))
       .child(face)
       .when(st === "working", (el) => el.child(div().absolute().left(0).top(0).size_full().bg("#7fb6ff").opacity(0.12)))
@@ -477,11 +477,12 @@ export function videoWall(x, y, h, remotes) {
         .text_size(9).text_color("#ffffff").child(div().truncate().child(r.name)));
   };
   const machines = [...new Set(remotes.map((r) => r.machine))].join(", ");
-  return div().absolute().left(x).top(y).p(4).bg("#1d1d24").rounded(3).border_2().border_color("#3b3b44").flex().flex_col().gap(3)
-    .child(div().flex().items_center().gap(4).max_w(48 * 3 + 6).text_size(10).font_bold()
-      .child(div().size(5).flex_none().rounded_full().bg("#e05252").loop("opacity", { from: 0.3, to: 1, period: 1200 }))
-      .child(div().truncate().text_color("#cfd6e0").child(`REMOTE · ${machines}`)))
-    .child(div().flex().flex_wrap().gap(3).max_w(48 * 3 + 6).max_h(h - 22).overflow_hidden().children(remotes.slice(0, 6).map(tile)));
+  const visible = remotes.slice(0, Math.max(3, Math.floor((h - 22 + 3) / 51) * 3));
+  return div().absolute().left(x).top(y).p(4).bg("#1d1d24").rounded(0).border_1().border_color("#657585").flex().flex_col().gap(3)
+    .child(div().flex().items_center().gap(4).max_w(48 * 3 + 6).text_size(9).font_bold()
+      .child(div().text_color("#cfd6e0").child("REMOTE"))
+      .child(div().truncate().text_color("#91a5b5").child(machines)))
+    .child(div().flex().flex_wrap().gap(3).max_w(48 * 3 + 6).max_h(h - 22).overflow_hidden().children(visible.map(tile)));
 }
 
 // The way in and out, on the back wall. Open while someone passes through.
