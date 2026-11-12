@@ -260,12 +260,12 @@ export function weatherBoard(x, y, timeText, kind, meta, dark) {
   const panel = dark ? "#dce4e5" : "#eef2ed";
   const ink = dark ? "#202a38" : "#1d1d24";
   const muted = dark ? "#536273" : "#5a6b5f";
-  return div().absolute().left(x).top(y).w(150).rounded(3).overflow_hidden().border_2().border_color(dark ? "#52647a" : "#84958b")
+  return div().absolute().left(x).top(y).w(150).rounded(0).overflow_hidden().border_1().border_color(dark ? "#52647a" : "#84958b")
     .child(div().w_full().h(20).px(6).bg(dark ? "#26364a" : "#3a5a48").flex().items_center().justify_between().text_color("#eef5f0")
       .child(div().truncate().text_size(9).font_bold().child(place))
       .child(div().text_size(11).font_bold().child(timeText)))
     .child(div().flex().items_center().gap(8).p(6).bg(panel)
-      .child(div().w(56).h(40).relative().overflow_hidden().rounded(3).child(weatherIcon(kind, dark)))
+      .child(div().w(56).h(40).relative().overflow_hidden().rounded(0).child(weatherIcon(kind, dark)))
       .child(div().flex_1().flex().flex_col().gap(3)
         .child(div().flex().items_end().gap(4)
           .child(div().text_size(19).font_bold().text_color(ink).child(temp))
@@ -416,12 +416,29 @@ export function whiteboard(x, y, rows) {
 
 // "DAYS CLEAR" resets to a blinking 0 while someone is blocked.
 export function incidentSign(x, y, h, days, now) {
-  return div().absolute().left(x).top(y).w(112).h(Math.min(h, 74)).p(5).bg("#f6d44c").border_1().border_color(INK)
-    .flex().flex_col().items_center().justify_between().text_color(INK)
-    .child(div().text_size(10).font_bold().child("DAYS CLEAR"))
-    .child(div().px(10).rounded(3).bg("#1d1d24").text_size(22).font_bold().text_color(now ? "#ff5a5a" : "#7dff9a")
+  const height = Math.min(h, 74);
+  const paper = now ? "#e7b84b" : "#f0cf61";
+  const ink = now ? "#5d2524" : "#3b2a1a";
+  const pixel = (left, top, width, height, color) =>
+    div().absolute().left(left).top(top).w(width).h(height).bg(color);
+  const texture = Array.from({ length: 24 }, (_, k) =>
+    pixel(8 + (k % 6) * 16, 26 + Math.floor(k / 6) * 7, k % 2 ? 3 : 5, 2, k % 3 ? "#d4a943" : "#f6dc73"));
+  return div().absolute().left(x).top(y).w(112).h(height).overflow_hidden()
+    .bg(paper).border_2().border_color("#3b2a1a").text_color(ink)
+    .child(div().absolute().left(0).top(0).size_full().opacity(0.55).children(texture))
+    .child(pixel(3, 3, 6, 2, "#fff0a3"))
+    .child(pixel(103, 3, 6, 2, "#8a6420"))
+    .child(pixel(3, height - 5, 6, 2, "#8a6420"))
+    .child(pixel(103, height - 5, 6, 2, "#fff0a3"))
+    .child(div().absolute().left(8).top(7).w(96).h(17).bg("#e1b84d").border_1().border_color("#8a6420")
+      .flex().items_center().justify_center().text_size(10).font_bold().child("DAYS CLEAR"))
+    .child(div().absolute().left(20).top(28).w(72).h(27).bg("#20252a").border_2().border_color("#6f5b2d")
+      .flex().items_center().justify_center().text_size(22).font_bold().text_color(now ? "#ff6b62" : "#9dff9a")
       .child(String(now ? 0 : days)).when(now, (el) => el.loop("opacity", { from: 0.35, to: 1, period: 600 })))
-    .child(div().text_size(9).font_bold().text_color("#5c4a1b").child("BLOCKED RESETS"));
+    .child(pixel(24, 32, 3, 3, "#59633d"))
+    .child(pixel(85, 32, 3, 3, "#59633d"))
+    .child(div().absolute().left(8).top(height - 16).w(96).h(10).flex().items_center().justify_center()
+      .text_size(8).font_bold().text_color("#5c4a1b").child("BLOCKED RESETS"));
 }
 
 // A small wall calendar gives the glass wall a lived-in office detail.
