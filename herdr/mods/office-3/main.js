@@ -169,10 +169,10 @@ export default class Office extends View {
         const points = [];
         // Only add a vertical leg when the agent is in the back row. Avoid a
         // zero-distance waypoint, which made a leaver stand and walk in place.
-        if (Math.abs(pos.y - floorY) > 1) points.push({ spot: `leave-floor:${k}`, x: pos.x, y: floorY });
+        if (Math.abs(pos.y - floorY) > 1) points.push({ spot: `leave-floor:${k}`, x: pos.x, y: floorY, depth: "back" });
         points.push(
-          { spot: `leave-door:${k}`, x: door.x, y: floorY },
-          { spot: "door", x: door.x, y: door.y },
+          { spot: `leave-door:${k}`, x: door.x, y: floorY, depth: "front" },
+          { spot: "door", x: door.x, y: door.y, depth: "front" },
         );
         this.leaving[k] = { pal: this.seen[k].pal, id, points };
         this.routeWalk(`leave:${k}`, id, points, WALK_SPEED, cx, { ...at, ...pos });
@@ -263,11 +263,54 @@ export default class Office extends View {
     while (route.index < points.length) {
       const point = points[route.index];
       at = this.walk(key, point.spot, point.x, point.y, speed, cx, route.index === 0 ? start : null);
+      at.depth = point.depth;
       if (Date.now() < at.until) break;
       if (route.index === points.length - 1) break;
       route.index++;
     }
     return { at, done: route.index === points.length - 1 && Date.now() >= at.until };
+  }
+
+  personRoute(a, target, g, start = this.at[a.address]) {
+    const id = `${target.spot}:${target.x}:${target.y}`;
+    const current = this.routes[a.address];
+    if (current?.id === id) return { id, points: current.points };
+    const floor = g.floorY;
+    const depth = target.y < floor ? "back" : "front";
+    if (!start || (start.spot === target.spot && start.x === target.x && start.y === target.y)) {
+      return { id, points: [{ ...target, depth }] };
+    }
+    const fromBack = start.depth === "back" || (!start.depth && start.spot !== "door" && start.y < floor);
+    const targetBack = depth === "back";
+    const points = [];
+    const add = (spot, x, y, pointDepth) => {
+      const last = points.at(-1);
+      if (!last || last.x !== x || last.y !== y) points.push({ spot, x, y, depth: pointDepth });
+    };
+    const fromLaneY = fromBack ? g.backLaneY : g.frontLaneY;
+    const targetLaneY = targetBack ? g.backLaneY : g.frontLaneY;
+    const kitchenTarget = target.spot === "cooler" || target.spot === "couch" || target.spot === "pizza";
+    if (fromBack !== targetBack) {
+      add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
+      add("kitchen-gate", g.kitchenGateX, fromLaneY, fromBack ? "back" : "front");
+      add("target-lane", g.kitchenGateX, targetLaneY, targetBack ? "back" : "front");
+    } else {
+      add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
+    }
+    if (kitchenTarget) {
+      add("kitchen-gate", g.kitchenGateX, g.frontLaneY, "front");
+      add("furniture-clearance", target.x, g.frontLaneY, "front");
+      add("target-lane", target.x, targetLaneY, targetBack ? "back" : "front");
+    } else {
+      add("target-lane", target.x, targetLaneY, targetBack ? "back" : "front");
+    }
+    const last = points.at(-1);
+    if (last?.x === target.x && last?.y === target.y) {
+      points.push({ ...target, depth });
+    } else {
+      add(target.spot, target.x, target.y, depth);
+    }
+    return { id, points };
   }
 
   geometry(W, H, deskCount) {
@@ -292,8 +335,17 @@ export default class Office extends View {
     const deskPos = (i) => i < FRONT_ROW
       ? { x: x0 + i * slot, y: floorY, back: false }
       : { x: x0 + (i - FRONT_ROW) * slot + slot / 2, y: floorY - 10 * P, back: true };
+    // The back lane runs below the raised back desks; the front lane is the actual floor line.
+    const backLaneY = floorY - 6 * P;
+    const frontLaneY = floorY;
+    const kitchenGateX = zoneX - 12 * P;
+    const counterRight = zoneX + A.COUNTER_SPRITE.frame.width * P;
+    const coolerRight = coolerX + A.COOLER_SPRITE.frame.width * P;
+    const couchRight = couchX + A.COUCH_SPRITE.frame.width * P;
     return {
-      P, floorY, wallBottom, slot, x0, deskPos, zoneX, coolerX, couchX, doorX, plantL,
+      P, floorY, wallBottom, backLaneY, frontLaneY, kitchenGateX,
+      counterLeft: zoneX, counterRight, coolerLeft: coolerX, coolerRight,
+      couchLeft: couchX, couchRight, slot, x0, deskPos, zoneX, coolerX, couchX, doorX, plantL,
       plantR: couchX + A.COUCH_SPRITE.frame.width * P + 6 * P,
       door: { x: doorX + 2 * P, y: wallBottom + 2 * P },
     };
@@ -371,35 +423,51 @@ export default class Office extends View {
       if (this.started && !this.at[a.address] && !this.entering[a.address]) {
         this.entering[a.address] = { id: a.address, points: [] };
       }
-      let at;
+      let at, moving;
       if (this.entering[a.address]) {
         const entry = this.entering[a.address];
-        const points = [{ spot: "entry-floor", x: g.door.x, y: g.floorY }];
-        if (d.back) points.push({ spot: "entry-row", x: d.x, y: g.floorY });
-        points.push({ spot: p.spot, x: p.x, y: p.y });
-        entry.points = points;
+        entry.id = `${a.address}:entry:${p.spot}:${p.x}:${p.y}`;
+        const entryRoute = this.personRoute(a, p, g, { ...g.door, spot: "door", depth: "front" });
+        entry.points = entryRoute.points;
         const result = this.routeWalk(a.address, entry.id, entry.points, WALK_SPEED, cx, g.door);
         at = result.at;
+        moving = !result.done;
         if (result.done) {
           delete this.entering[a.address];
           delete this.routes[a.address];
         }
       } else {
-        at = this.walk(a.address, p.spot, p.x, p.y, WALK_SPEED, cx);
+        const route = this.personRoute(a, p, g);
+        const result = this.routeWalk(a.address, route.id, route.points, WALK_SPEED, cx);
+        at = result.at;
+        moving = !result.done;
       }
-      return { y: p.y, walking: now < at.until, el: this.person(a, at, g, p.face, tabs[a.tab], alarmed.includes(a)) };
+      return { depth: at.depth ?? (p.y < g.floorY ? "back" : "front"), walking: moving, el: this.person(a, at, g, p.face, tabs[a.tab], alarmed.includes(a), moving, p.spot) };
     });
     // Back-row walkers stay behind the furniture; front-row walkers belong in
     // front of it, like the seated agents they are walking toward.
-    const walkingBackPeople = people.filter((p) => p.walking && p.y < g.floorY).map((p) => p.el);
-    const walkingFrontPeople = people.filter((p) => p.walking && p.y >= g.floorY).map((p) => p.el);
-    const backPeople = people.filter((p) => !p.walking && p.y < g.floorY).map((p) => p.el);
-    const frontPeople = people.filter((p) => !p.walking && p.y >= g.floorY).map((p) => p.el);
+    const walkingBackPeople = people.filter((p) => p.walking && p.depth === "back").map((p) => p.el);
+    const walkingFrontPeople = people.filter((p) => p.walking && p.depth === "front").map((p) => p.el);
+    const backPeople = people.filter((p) => !p.walking && p.depth === "back").map((p) => p.el);
+    const frontPeople = people.filter((p) => !p.walking && p.depth === "front").map((p) => p.el);
     const desks = Array.from({ length: deskCount }, (_, i) => {
       const pos = g.deskPos(i);
       const a = byDesk[i];
       return { back: pos.back, el: this.deskAt(i, pos, g, a, a && tabs[a.tab], a && branches[a.pane]) };
     });
+    const graduatePeople = this.graduates(g, now, cx);
+    const graduateBackWalking = graduatePeople.filter((p) => p.walking && p.depth === "back").map((p) => p.el);
+    const graduateBackPeople = graduatePeople.filter((p) => !p.walking && p.depth === "back").map((p) => p.el);
+    const graduateFrontWalking = graduatePeople.filter((p) => p.walking && p.depth !== "back").map((p) => p.el);
+    const graduateFrontPeople = graduatePeople.filter((p) => !p.walking && p.depth !== "back").map((p) => p.el);
+    const leavingPeople = this.leavers(g, now, cx);
+    const leavingBackWalking = leavingPeople.filter((p) => p.walking && p.depth === "back").map((p) => p.el);
+    const leavingBackPeople = leavingPeople.filter((p) => !p.walking && p.depth === "back").map((p) => p.el);
+    const leavingFrontWalking = leavingPeople.filter((p) => p.walking && p.depth !== "back").map((p) => p.el);
+    const leavingFrontPeople = leavingPeople.filter((p) => !p.walking && p.depth !== "back").map((p) => p.el);
+    const kittyEl = this.kitty(g, cx);
+    const kittyOnDesk = this.cat.goal === "sleep" && this.cat.phase === "sleep";
+    const kittyBack = kittyOnDesk && g.deskPos(this.cat.desk).back;
 
     const hour = this.now.getHours();
     const dark = lightsDown(hour, this.weatherMeta);
@@ -412,16 +480,28 @@ export default class Office extends View {
       .on_size_change((size, cx) => { this.size = size; cx.notify(); })
       .children([
         ...this.room(W, H, g, sky(hour, this.weatherMeta), list, all, now, when),
+        // Back-row walkers stay behind the desk; front-row walkers stay in front of both desk and sitter.
         ...walkingBackPeople,
-        ...walkingFrontPeople,
+        ...graduateBackWalking,
+        ...leavingBackWalking,
         ...desks.filter((d) => d.back).map((d) => d.el),
         ...backPeople,
+        ...graduateBackPeople,
+        ...leavingBackPeople,
+        ...(kittyBack ? [kittyEl] : []),
         ...desks.filter((d) => !d.back).map((d) => d.el),
         this.prop(A.COUNTER_SPRITE, g.zoneX, g),
         ...D.coffeeSteam(g.zoneX + 9 * P, g.floorY - 20 * P),
         ...(pizzaHere ? [this.prop(A.PIZZA_BOX_SPRITE, g.zoneX, g)] : []),
         this.prop(A.COOLER_SPRITE, g.coolerX, g),
         this.prop(A.COUCH_SPRITE, g.couchX, g),
+        ...frontPeople,
+        ...graduateFrontPeople,
+        ...leavingFrontPeople,
+        ...(kittyOnDesk && !kittyBack ? [kittyEl] : []),
+        ...walkingFrontPeople,
+        ...graduateFrontWalking,
+        ...leavingFrontWalking,
         ...D.lifeProps(g, lightsDown(this.now.getHours(), this.weatherMeta), Math.floor(this.now.getTime() / 60000) % 3 === 0),
         ...D.petCorner(g, lightsDown(this.now.getHours(), this.weatherMeta)),
         this.prop(A.PLANT_SPRITE, g.plantR, g),
@@ -429,11 +509,8 @@ export default class Office extends View {
         ...(when === "halloween" ? [this.prop(A.PUMPKIN_SPRITE, g.plantL + 10 * P, g), this.prop(A.PUMPKIN_SPRITE, g.plantR - 9 * P, g),
           ...(pizzaHere ? [] : [this.prop(A.PUMPKIN_SPRITE, g.zoneX + 13 * P, g, 11 * P)])] : []),
         ...here.flatMap((a) => this.interns(a, descendants(all, a.address), g)),
-        ...this.graduates(g, now, cx),
-        ...this.leavers(g, now, cx),
-        ...frontPeople,
-        ...(party ? [this.courier(party, counter, courierTrip, g, now, cx)] : []),
-        this.kitty(g, cx),
+        ...(party ? [this.courier(party, counter, courierTrip, g, now, cx).el] : []),
+        ...(!kittyOnDesk ? [kittyEl] : []),
         ...(dark ? this.night(W, H, g, byDesk, deskCount, when) : []),
         ...(alarmed.length ? D.alarm(W, H, g.deskPos(this.desk[alarmed[0].address]).x + 27 * P) : []),
         ...(hovered && this.at[hovered.address] ? [this.thought(hovered, this.at[hovered.address], g)] : []),
@@ -639,12 +716,21 @@ export default class Office extends View {
       if (now < gr.start + GRAD_BOW) {
         const body = this.pose(gr.pal, -1, [A.STAND.backLeg, A.STAND.frontLeg, A.STAND.arm], gr.p)
           .child(this.part(A.STAND.body, gr.pal, -1, gr.p).left(-gr.p).loop("top", { from: 0, to: 2 * gr.p, period: 900 }));
-        return [box(body, gr.x, gr.y).child(this.bubble((PERSON_FRAME.height - 20) * gr.p - 18, "#3b3b44", gr.p).child("🎓 thx!"))];
+        return [{ walking: false, depth: gr.y < g.floorY ? "back" : "front", el: box(body, gr.x, gr.y).child(this.bubble((PERSON_FRAME.height - 20) * gr.p - 18, "#3b3b44", gr.p).child("🎓 thx!")) }];
       }
-      const at = this.walk(`grad:${k}`, "door", g.door.x, g.door.y, WALK_SPEED, cx, { x: gr.x, y: gr.y });
-      if (now >= at.until && at.until > 0) { delete this.grads[k]; delete this.at[`grad:${k}`]; return []; }
-      return [box(this.walker(gr.pal, -1, [], gr.p), at.x, at.y)
-        .transition("left", { duration: at.dur, easing: "ease-in-out" }).transition("top", { duration: at.dur, easing: "ease-in-out" })];
+      const id = `grad:${k}`;
+      const route = this.routes[id] ?? {
+        id,
+        points: [
+          ...(gr.y < g.floorY ? [{ spot: "grad-floor", x: gr.x, y: g.floorY, depth: "back" }] : []),
+          { spot: "grad-door-floor", x: g.door.x, y: g.floorY, depth: "front" },
+          { spot: "door", x: g.door.x, y: g.door.y, depth: "front" },
+        ],
+      };
+      const result = this.routeWalk(id, route.id, route.points, WALK_SPEED, cx, { x: gr.x, y: gr.y });
+      const at = result.at;
+      if (result.done) { delete this.grads[k]; delete this.at[id]; delete this.routes[id]; return []; }
+      return [{ walking: !result.done, depth: at.depth ?? "front", el: box(this.walker(gr.pal, -1, [], gr.p), at.x, at.y) }];
     });
   }
 
@@ -658,19 +744,23 @@ export default class Office extends View {
         return [];
       }
       const pos = this.position(at, now);
-      return [actor(PERSON_FRAME, pos.x, pos.y, [this.walker(leave.pal, Math.sign(at.x - at.fromX) || -1, [A.STAND.box], g.P, false)], g.P)
-        .id(`leave-${k}`)];
+      return [{
+        walking: true,
+        depth: at.depth,
+        el: actor(PERSON_FRAME, pos.x, pos.y, [this.walker(leave.pal, Math.sign(at.x - at.fromX) || -1, [A.STAND.box], g.P, false)], g.P)
+          .id(`leave-${k}`),
+      }];
     });
   }
 
   courier(party, counter, trip, g, now, cx) {
     const stay = 2500;
     const leaving = now >= party.start + trip + stay;
-    if (now >= party.start + 2 * trip + stay + 100) return div();
+    if (now >= party.start + 2 * trip + stay + 100) return { depth: "front", el: div() };
     if (!leaving) cx.timer.after(party.start + trip + stay - now + 20, (cx) => cx.notify());
-    const floorDoor = { spot: "door-floor", x: g.door.x, y: g.floorY };
-    const floorCounter = { spot: "counter", x: counter.x, y: g.floorY };
-    const route = leaving ? [floorCounter, floorDoor, { spot: "door", x: g.door.x, y: g.door.y }]
+    const floorDoor = { spot: "door-floor", x: g.door.x, y: g.floorY, depth: "front" };
+    const floorCounter = { spot: "counter", x: counter.x, y: g.floorY, depth: "front" };
+    const route = leaving ? [floorCounter, floorDoor, { spot: "door", x: g.door.x, y: g.door.y, depth: "front" }]
       : [floorDoor, floorCounter];
     const result = this.routeWalk("courier", leaving ? "out" : "in", route, WALK_SPEED, cx, g.door);
     const at = result.at;
@@ -679,18 +769,19 @@ export default class Office extends View {
     const body = walking ? this.walker(A.COURIER, face, leaving ? [] : [A.STAND.pizza], g.P, leaving)
       : this.pose(A.COURIER, 1, [A.STAND.backLeg, A.STAND.frontLeg, A.STAND.body, A.STAND.armUp]);
     const pos = this.position(at, now);
-    return actor(PERSON_FRAME, pos.x, pos.y, [body], g.P).id("courier")
-      .when(!walking, (el) => el.child(this.bubble((PERSON_FRAME.height - 20) * g.P - 20, "#d94a3a").child("pizza! 🍕")));
+    return { depth: at.depth ?? "front", el: actor(PERSON_FRAME, pos.x, pos.y, [body], g.P).id("courier")
+      .when(!walking, (el) => el.child(this.bubble((PERSON_FRAME.height - 20) * g.P - 20, "#d94a3a").child("pizza! 🍕"))) };
   }
 
-  person(a, at, g, placeFace, tab, alarmed) {
+  person(a, at, g, placeFace, tab, alarmed, moving = false, destinationSpot = at.spot) {
     const P = g.P;
-    const napping = at.spot === "couch";
+    const spot = moving ? at.spot : destinationSpot;
+    const napping = spot === "couch";
     const base = A.look(a.address);
     const pal = napping ? { ...base, eye: "#00000000" } : base;
     const away = remote(a.address);
     const now = Date.now();
-    const walking = now < at.until;
+    const walking = moving;
     const pos = this.position(at, now);
     const face = walking ? Math.sign(at.x - at.fromX) || 1 : placeFace;
     at.face = face;
@@ -698,7 +789,7 @@ export default class Office extends View {
     const hs = away ? [A.HEADSET.stand] : [];
     let body, headTop;
     if (walking) [body, headTop] = [this.walker(pal, face, hs), 22];
-    else if (at.spot === "cooler" || at.spot === "pizza") {
+    else if (spot === "cooler" || spot === "pizza") {
       body = this.pose(pal, face, [A.STAND.backLeg, A.STAND.frontLeg, A.STAND.body, ...hs, A.STAND.cup])
         .loop("top", { from: 0, to: -1, period: 2600 + (pal.salt % 900) });
       headTop = 22;
@@ -733,8 +824,8 @@ export default class Office extends View {
     const top = (PERSON_FRAME.height - headTop) * P - 20;
     let bubble = null;
     if (walking) bubble = null;
-    else if (at.spot === "pizza") bubble = this.bubble(top, "#d94a3a").frames(rotate(PIZZA_CHAT, pal.salt % PIZZA_CHAT.length), 1800 + (pal.salt % 900));
-    else if (at.spot === "cooler") bubble = this.bubble(top, "#3b3b44").frames(rotate(CHAT, pal.salt % CHAT.length), 2200 + (pal.salt % 1500));
+    else if (spot === "pizza") bubble = this.bubble(top, "#d94a3a").frames(rotate(PIZZA_CHAT, pal.salt % PIZZA_CHAT.length), 1800 + (pal.salt % 900));
+    else if (spot === "cooler") bubble = this.bubble(top, "#3b3b44").frames(rotate(CHAT, pal.salt % CHAT.length), 2200 + (pal.salt % 1500));
     else if (napping) bubble = this.bubble(top, "#6b5fb5").frames(["z", "zZ", "zZz", "zZ"], 900);
     else if (alarmed) bubble = this.bubble(top, "#e05252").child("HELP!!").loop("opacity", { from: 0.5, to: 1, period: 400 });
     else if (st === "blocked") bubble = this.bubble(top, "#e05252").child("!").loop("opacity", { from: 0.5, to: 1, period: 700 });
@@ -830,7 +921,6 @@ export default class Office extends View {
         x = deskX;
         y = deskY;
         jumping = false;
-        cx.notify();
       }
     } else if (c.goal === "sleep" && c.phase === "sleep") {
       x = deskX;
