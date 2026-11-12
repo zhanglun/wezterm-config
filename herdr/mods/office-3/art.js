@@ -551,7 +551,19 @@ export const COUNTER_SPRITE = {
 };
 export const PLANT_SPRITE = {
   frame: { width: 9, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT },
-  rects: [[4, 13, 2, 10, "leaf"], [1, 16, 2, 6, "leaf2"], [6, 15, 2, 7, "leaf2"], [0, 14, 2, 3, "leaf"], [7, 12, 2, 4, "leaf"], [3, 11, 2, 3, "leaf2"], [1, 23, 7, 1, "potRim"], [2, 24, 5, 6, "pot"]],
+  rects: [
+    // Stems and leaves: stepped silhouettes leave small gaps between the branches.
+    [4, 10, 1, 14, "leaf2"], [2, 13, 1, 11, "leaf2"], [6, 12, 1, 12, "leaf2"],
+    [1, 13, 3, 2, "leaf"], [0, 15, 3, 3, "leaf2"], [2, 18, 3, 3, "leaf"],
+    [5, 13, 3, 2, "leaf"], [6, 15, 3, 3, "leaf2"], [4, 18, 3, 3, "leaf"],
+    [1, 20, 2, 2, "leaf2"], [6, 20, 2, 2, "leaf2"], [3, 21, 2, 3, "leaf2"],
+    [2, 13, 1, 1, "leafHi"], [1, 16, 1, 1, "leafHi"], [2, 18, 1, 1, "leafHi"],
+    [5, 13, 1, 1, "leafHi"], [7, 16, 1, 1, "leafHi"], [5, 18, 1, 1, "leafHi"], [6, 20, 1, 1, "leafHi"],
+    // Two tiny blossoms, kept inside the original frame.
+    [2, 8, 3, 1, "flower"], [1, 9, 1, 1, "flower"], [3, 9, 1, 1, "flower"], [2, 10, 2, 1, "flower"], [2, 9, 1, 1, "flowerHi"],
+    [6, 7, 2, 1, "flower"], [5, 8, 1, 1, "flower"], [7, 8, 1, 1, "flower"], [6, 9, 2, 1, "flower"], [6, 8, 1, 1, "flowerHi"],
+    [1, 23, 7, 1, "potRim"], [2, 24, 5, 6, "pot"], [2, 25, 1, 4, "potRim"], [6, 25, 1, 5, "potRim"], [3, 29, 3, 1, "potShade"],
+  ],
 };
 
 export const CAT_FRAME = { width: 14, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT };
@@ -802,7 +814,7 @@ export const PALETTE = {
   counter: "#7d6a58", counterTop: "#d8d2c8", counterLine: "#5e4f41",
   coffee: "#2d2d33", coffeeLight: "#58c26b", coffeeShade: "#18181c", mug2: "#e07a5f", tray: "#6b6b75",
   couch: "#5b6fb5", couchBack: "#4c5f9e", couchShade: "#3e4e85", cushion: "#e0b43d",
-  leaf: "#3f9a55", leaf2: "#2f7a43", pot: "#c0643f", potRim: "#a3502f",
+  leaf: "#4fb866", leaf2: "#2b7541", leafHi: "#78d37a", flower: "#e05c8c", flowerHi: "#ffd76a", pot: "#c0643f", potRim: "#e07a5f", potShade: "#8f432f",
   eye: "#1d1d24", cup: "#ffffff", belt: "#3a2c22", shoe: "#2a2420",
   laptop: "#9aa3ad", laptopScreen: "#7fd1b9", stool: "#6b4a30", stoolLeg: "#3b2a1e",
   cardboard: "#c9995b", cardboardTop: "#a87c43", headset: "#2b2b33", headsetMic: "#e05252",
