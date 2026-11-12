@@ -508,7 +508,11 @@ export const SLOT = 48; // scene spacing between desk anchors
 // Top-origin frames migrated from the original desk art. The art is unchanged.
 export const CHAIR_SPRITE = {
   frame: { width: SLOT, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT },
-  rects: [[0, 12, 2, 10, "chair"], [0, 22, 8, 2, "chair"], [3, 24, 2, 5, "chairLeg"], [1, 29, 6, 1, "chairLeg"]],
+  rects: [
+    [0, 12, 2, 10, "chair"], [1, 13, 1, 8, "chairHi"],
+    [0, 22, 8, 2, "chair"], [1, 22, 6, 1, "chairHi"], [6, 23, 2, 1, "chairShadow"],
+    [3, 24, 2, 5, "chairLeg"], [4, 24, 1, 5, "chairLegHi"], [1, 29, 6, 1, "chairLeg"],
+  ],
 };
 export const BELL_SPRITE = {
   frame: { width: SLOT, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT },
@@ -516,7 +520,20 @@ export const BELL_SPRITE = {
 };
 export const DESK_SPRITE = {
   frame: { width: SLOT, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT },
-  rects: [[10, 18, 26, 2, "deskTop"], [10, 20, 26, 1, "deskEdge"], [13, 21, 2, 9, "deskLeg"], [33, 21, 2, 9, "deskLeg"], [24, 21, 8, 6, "deskSide"], [26, 23, 3, 1, "handle"], [12, 17, 5, 1, "kbd"], [21, 6, 12, 10, "mon"], [26, 16, 2, 1, "mon"], [24, 17, 6, 1, "mug"], [9, 16, 1, 1, "mug"], [33, 17, 3, 1, "lamp"], [34, 11, 1, 6, "lamp"], [33, 8, 4, 3, "lampShade"]],
+  rects: [
+    [10, 18, 26, 2, "deskTop"], [11, 18, 24, 1, "deskTopHi"],
+    [10, 20, 26, 1, "deskEdge"], [11, 20, 24, 1, "deskEdgeHi"],
+    [13, 21, 2, 9, "deskLeg"], [13, 21, 1, 8, "deskLegHi"],
+    [33, 21, 2, 9, "deskLeg"], [33, 21, 1, 8, "deskLegHi"],
+    [24, 21, 8, 6, "deskSide"], [25, 21, 6, 1, "deskSideHi"], [31, 22, 1, 4, "deskSideShade"],
+    [26, 23, 3, 1, "handle"], [26, 23, 2, 1, "handleHi"],
+    [12, 17, 5, 1, "kbd"], [13, 17, 1, 1, "kbdKey"], [15, 17, 1, 1, "kbdKey"],
+    [21, 6, 12, 10, "mon"], [22, 7, 10, 1, "monHi"], [21, 7, 1, 9, "monSide"],
+    [26, 16, 2, 1, "monStand"], [25, 17, 4, 1, "monStand"],
+    [24, 17, 6, 1, "mug"], [24, 17, 1, 1, "mugHi"], [9, 16, 1, 1, "mug"],
+    [33, 17, 3, 1, "lamp"], [33, 17, 2, 1, "lampHi"], [34, 11, 1, 6, "lamp"],
+    [34, 11, 1, 5, "lampHi"], [33, 8, 4, 3, "lampShade"], [33, 8, 3, 1, "lampShadeHi"],
+  ],
   screen: [22, 7, 10, 8],
   bulb: [33, 11, 4, 1],
 };
@@ -805,9 +822,9 @@ export const KITTY = {
 };
 
 export const PALETTE = {
-  chair: "#3d4a6b", chairLeg: "#2a3149",
-  deskTop: "#a0683f", deskEdge: "#7d4f2e", deskLeg: "#5c3a22", deskSide: "#8a5a35", handle: "#d9b37c",
-  kbd: "#d9dde3", mon: "#2b2f3a", mug: "#c9b79c", lamp: "#3b3b44", lampShade: "#2f7a6a",
+  chair: "#3d4a6b", chairHi: "#53658e", chairShadow: "#2a3149", chairLeg: "#2a3149", chairLegHi: "#465577",
+  deskTop: "#a0683f", deskTopHi: "#bd8050", deskEdge: "#7d4f2e", deskEdgeHi: "#9a6138", deskLeg: "#5c3a22", deskLegHi: "#76502f", deskSide: "#8a5a35", deskSideHi: "#a96b40", deskSideShade: "#684329", handle: "#d9b37c", handleHi: "#f0cf91",
+  kbd: "#d9dde3", kbdKey: "#f6f0d9", mon: "#2b2f3a", monHi: "#596474", monSide: "#1e2430", monStand: "#596474", mug: "#c9b79c", mugHi: "#eee0c0", lamp: "#3b3b44", lampHi: "#6c7074", lampShade: "#2f7a6a", lampShadeHi: "#4b9a87",
   bell: "#e0b43d", bellBase: "#6b5a2a",
   coolerBody: "#e9eef3", coolerShade: "#c3ccd6", tapRed: "#e05252", tapBlue: "#3d8be0",
   water: "#8fd0f5", waterHi: "#d6f0ff", cap: "#3d8be0", cupStack: "#ffffff",
