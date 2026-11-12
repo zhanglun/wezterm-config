@@ -290,15 +290,23 @@ export default class Office extends View {
     const fromLaneY = fromBack ? g.backLaneY : g.frontLaneY;
     const targetLaneY = targetBack ? g.backLaneY : g.frontLaneY;
     const kitchenTarget = target.spot === "cooler" || target.spot === "couch" || target.spot === "pizza";
+    const crossesCounter = target.spot === "cooler" || target.spot === "couch";
     if (fromBack !== targetBack) {
       add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
       add("kitchen-gate", g.kitchenGateX, fromLaneY, fromBack ? "back" : "front");
-      add("target-lane", g.kitchenGateX, targetLaneY, targetBack ? "back" : "front");
+      add("target-lane", g.kitchenGateX, crossesCounter ? g.kitchenLaneY : targetLaneY, crossesCounter ? "back" : (targetBack ? "back" : "front"));
     } else {
       add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
     }
     if (kitchenTarget) {
-      add("kitchen-gate", g.kitchenGateX, g.frontLaneY, "front");
+      if (crossesCounter) {
+        // Cross behind the counter, then return to the front only after its right edge.
+        add("kitchen-gate", g.kitchenGateX, g.kitchenLaneY, "back");
+        add("counter-clearance", g.counterRight + 6 * g.P, g.kitchenLaneY, "back");
+        add("counter-exit", g.counterRight + 6 * g.P, g.frontLaneY, "front");
+      } else {
+        add("kitchen-gate", g.kitchenGateX, g.frontLaneY, "front");
+      }
       add("furniture-clearance", target.x, g.frontLaneY, "front");
       add("target-lane", target.x, targetLaneY, targetBack ? "back" : "front");
     } else {
@@ -338,12 +346,14 @@ export default class Office extends View {
     // The back lane runs below the raised back desks; the front lane is the actual floor line.
     const backLaneY = floorY - 6 * P;
     const frontLaneY = floorY;
+    // Keep the crossing lane above the counter top; the counter and printer occlude the lower body.
+    const kitchenLaneY = floorY - 12 * P;
     const kitchenGateX = zoneX - 12 * P;
     const counterRight = zoneX + A.COUNTER_SPRITE.frame.width * P;
     const coolerRight = coolerX + A.COOLER_SPRITE.frame.width * P;
     const couchRight = couchX + A.COUCH_SPRITE.frame.width * P;
     return {
-      P, floorY, wallBottom, backLaneY, frontLaneY, kitchenGateX,
+      P, floorY, wallBottom, backLaneY, frontLaneY, kitchenLaneY, kitchenGateX,
       counterLeft: zoneX, counterRight, coolerLeft: coolerX, coolerRight,
       couchLeft: couchX, couchRight, slot, x0, deskPos, zoneX, coolerX, couchX, doorX, plantL,
       plantR: couchX + A.COUCH_SPRITE.frame.width * P + 6 * P,

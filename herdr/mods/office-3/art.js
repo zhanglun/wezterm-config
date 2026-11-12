@@ -34,6 +34,7 @@ export const STAND = {
       3,
       "hair"
     ],
+    [3, 8, 3, 1, "hairHi"],
     [
       2,
       11,
@@ -55,6 +56,7 @@ export const STAND = {
       6,
       "shirt"
     ],
+    [4, 17, 1, 4, "shirtHi"], [8, 19, 1, 3, "shirtShade"],
     [
       3,
       22,
@@ -71,6 +73,7 @@ export const STAND = {
       7,
       "pants2"
     ],
+    [4, 23, 1, 4, "pantsHi"],
     [
       4,
       29,
@@ -87,6 +90,7 @@ export const STAND = {
       7,
       "pants"
     ],
+    [6, 23, 1, 4, "pantsHi"],
     [
       6,
       29,
@@ -337,6 +341,7 @@ export const SIT = {
       7,
       "skin"
     ],
+    [8, 9, 1, 3, "skinHi"],
     [
       9,
       10,
@@ -358,6 +363,7 @@ export const SIT = {
       3,
       "hair"
     ],
+    [3, 6, 3, 1, "hairHi"],
     [
       2,
       9,
@@ -372,6 +378,7 @@ export const SIT = {
       6,
       "shirt"
     ],
+    [4, 14, 1, 4, "shirtHi"], [8, 16, 1, 3, "shirtShade"],
     [
       3,
       20,
@@ -556,15 +563,15 @@ export const TREE_SPRITE = {
 };
 export const COUCH_SPRITE = {
   frame: { width: 34, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT },
-  rects: [[2, 15, 30, 7, "couchBack"], [0, 19, 4, 10, "couch"], [30, 19, 4, 10, "couch"], [3, 22, 28, 3, "couch"], [3, 25, 28, 4, "couchShade"], [16, 22, 1, 3, "couchShade"], [3, 29, 2, 1, "deskLeg"], [29, 29, 2, 1, "deskLeg"], [6, 17, 5, 4, "cushion"]],
+  rects: [[2, 15, 30, 7, "couchBack"], [3, 15, 28, 1, "couchHi"], [0, 19, 4, 10, "couch"], [0, 19, 1, 9, "couchHi"], [30, 19, 4, 10, "couch"], [30, 19, 1, 9, "couchHi"], [3, 22, 28, 3, "couch"], [4, 22, 26, 1, "couchHi"], [3, 25, 28, 4, "couchShade"], [16, 22, 1, 3, "couchShade"], [3, 29, 2, 1, "deskLeg"], [29, 29, 2, 1, "deskLeg"], [6, 17, 5, 4, "cushion"], [7, 17, 3, 1, "cushionHi"]],
 };
 export const COOLER_SPRITE = {
   frame: { width: 10, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT },
-  rects: [[1, 16, 8, 14, "coolerBody"], [7, 16, 2, 14, "coolerShade"], [1, 29, 8, 1, "coolerShade"], [3, 20, 4, 2, "coolerShade"], [3, 19, 1, 1, "tapRed"], [6, 19, 1, 1, "tapBlue"], [2, 8, 6, 8, "water"], [3, 9, 1, 5, "waterHi"], [4, 7, 2, 1, "cap"], [9, 18, 1, 6, "cupStack"]],
+  rects: [[1, 16, 8, 14, "coolerBody"], [2, 16, 1, 12, "coolerHi"], [7, 16, 2, 14, "coolerShade"], [1, 29, 8, 1, "coolerShade"], [3, 20, 4, 2, "coolerShade"], [3, 19, 1, 1, "tapRed"], [6, 19, 1, 1, "tapBlue"], [2, 8, 6, 8, "water"], [3, 9, 1, 5, "waterHi"], [4, 7, 2, 1, "cap"], [9, 18, 1, 6, "cupStack"], [9, 18, 1, 1, "cupHi"]],
 };
 export const COUNTER_SPRITE = {
   frame: { width: 22, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT },
-  rects: [[0, 19, 22, 1, "counterTop"], [0, 20, 22, 10, "counter"], [10, 20, 1, 10, "counterLine"], [3, 23, 4, 1, "handle"], [14, 23, 4, 1, "handle"], [2, 11, 7, 8, "coffee"], [3, 12, 5, 2, "coffeeLight"], [4, 16, 3, 1, "coffeeShade"], [4, 17, 2, 2, "cup"], [12, 16, 3, 3, "mug2"], [16, 17, 2, 2, "cup"], [11, 18, 9, 1, "tray"]],
+  rects: [[0, 19, 22, 1, "counterTop"], [1, 19, 20, 1, "counterTopHi"], [0, 20, 22, 10, "counter"], [1, 21, 9, 1, "counterHi"], [10, 20, 1, 10, "counterLine"], [3, 23, 4, 1, "handle"], [14, 23, 4, 1, "handle"], [2, 11, 7, 8, "coffee"], [3, 12, 5, 2, "coffeeLight"], [4, 16, 3, 1, "coffeeShade"], [4, 17, 2, 2, "cup"], [12, 16, 3, 3, "mug2"], [16, 17, 2, 2, "cup"], [11, 18, 9, 1, "tray"]],
 };
 export const PLANT_SPRITE = {
   frame: { width: 9, height: SPRITE_HEIGHT, anchorX: 0, anchorY: SPRITE_HEIGHT },
@@ -628,6 +635,7 @@ export const KITTY = {
       1,
       "catLight"
     ],
+    [4, 25, 1, 1, "catHi"], [7, 25, 1, 1, "catHi"],
     [
       9,
       23,
@@ -635,6 +643,7 @@ export const KITTY = {
       4,
       "cat"
     ],
+    [9, 21, 2, 2, "cat"], [11, 22, 2, 2, "cat"], [10, 23, 1, 1, "catLight"],
     [
       9,
       22,
@@ -732,6 +741,7 @@ export const KITTY = {
       4,
       "cat"
     ],
+    [6, 18, 2, 2, "cat"], [8, 19, 2, 1, "cat"], [7, 21, 1, 1, "catLight"],
     [
       6,
       19,
@@ -776,6 +786,7 @@ export const KITTY = {
       4,
       "cat"
     ],
+    [3, 25, 2, 1, "catHi"], [7, 25, 2, 1, "catHi"],
     [
       4,
       26,
@@ -826,11 +837,12 @@ export const PALETTE = {
   deskTop: "#a0683f", deskTopHi: "#bd8050", deskEdge: "#7d4f2e", deskEdgeHi: "#9a6138", deskLeg: "#5c3a22", deskLegHi: "#76502f", deskSide: "#8a5a35", deskSideHi: "#a96b40", deskSideShade: "#684329", handle: "#d9b37c", handleHi: "#f0cf91",
   kbd: "#d9dde3", kbdKey: "#f6f0d9", mon: "#2b2f3a", monHi: "#596474", monSide: "#1e2430", monStand: "#596474", mug: "#c9b79c", mugHi: "#eee0c0", lamp: "#3b3b44", lampHi: "#6c7074", lampShade: "#2f7a6a", lampShadeHi: "#4b9a87",
   bell: "#e0b43d", bellBase: "#6b5a2a",
-  coolerBody: "#e9eef3", coolerShade: "#c3ccd6", tapRed: "#e05252", tapBlue: "#3d8be0",
-  water: "#8fd0f5", waterHi: "#d6f0ff", cap: "#3d8be0", cupStack: "#ffffff",
-  counter: "#7d6a58", counterTop: "#d8d2c8", counterLine: "#5e4f41",
+  tapRed: "#e05252", tapBlue: "#3d8be0",
+  water: "#8fd0f5", waterHi: "#d6f0ff", cap: "#3d8be0", cupStack: "#ffffff", cupHi: "#ffffff",
   coffee: "#2d2d33", coffeeLight: "#58c26b", coffeeShade: "#18181c", mug2: "#e07a5f", tray: "#6b6b75",
-  couch: "#5b6fb5", couchBack: "#4c5f9e", couchShade: "#3e4e85", cushion: "#e0b43d",
+  couch: "#5b6fb5", couchBack: "#4c5f9e", couchShade: "#3e4e85", couchHi: "#7085d0", cushion: "#e0b43d", cushionHi: "#f0ca54",
+  coolerBody: "#e9eef3", coolerShade: "#c3ccd6", coolerHi: "#ffffff",
+  counter: "#7d6a58", counterTop: "#d8d2c8", counterLine: "#5e4f41", counterTopHi: "#f0ece2", counterHi: "#967f68",
   leaf: "#4fb866", leaf2: "#2b7541", leafHi: "#78d37a", flower: "#e05c8c", flowerHi: "#ffd76a", pot: "#c0643f", potRim: "#e07a5f", potShade: "#8f432f",
   eye: "#1d1d24", cup: "#ffffff", belt: "#3a2c22", shoe: "#2a2420",
   laptop: "#9aa3ad", laptopScreen: "#7fd1b9", stool: "#6b4a30", stoolLeg: "#3b2a1e",
@@ -838,7 +850,8 @@ export const PALETTE = {
   pizzaBox: "#e2d3b5", pizzaBoxShade: "#bfae8c", pizzaLogo: "#c0392b", pizza: "#f2c14e", pepperoni: "#c0392b", pizzaCrust: "#d9a441",
   pumpkin: "#e8761e", pumpkinShade: "#c45f12", stem: "#5a7a2a", pumpkinFace: "#ffd76a",
   tree: "#2f7a43", tree2: "#3f9a55", trunk: "#6b4a30", star: "#ffd76a", ornRed: "#e05252", ornBlue: "#3d8be0", ornGold: "#e0b43d",
-  cat: "#e39b4a", catLight: "#f5d3a3", catStripe: "#b86f2c", catEye: "#2a2a2a",
+  skinHi: "#ffe0be", hairHi: "#8a5c3b", shirtHi: "#f09578", shirtShade: "#b95749", pantsHi: "#536887",
+  cat: "#e39b4a", catLight: "#f5d3a3", catHi: "#ffd9a0", catStripe: "#b86f2c", catEye: "#2a2a2a",
 };
 
 // Mugs by agent program: who drinks from what.

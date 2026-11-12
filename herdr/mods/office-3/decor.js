@@ -265,11 +265,14 @@ export function weatherBoard(x, y, timeText, kind, meta, dark) {
       .child(div().truncate().text_size(9).font_bold().child(place))
       .child(div().text_size(11).font_bold().child(timeText)))
     .child(div().flex().items_center().gap(8).p(6).bg(panel)
-      .child(div().w(56).h(40).relative().overflow_hidden().rounded(0).child(weatherIcon(kind, dark)))
+      .child(div().w(56).h(40).relative().overflow_hidden().rounded(0).border_1().border_color(dark ? "#8495a5" : "#b7c6bf").child(weatherIcon(kind, dark)))
       .child(div().flex_1().flex().flex_col().gap(3)
         .child(div().flex().items_end().gap(4)
-          .child(div().text_size(19).font_bold().text_color(ink).child(temp))
+          .child(div().flex().items_center().gap(3)
+            .child(div().size(3).rounded_full().bg(kind === "storm" || kind === "rain" ? "#4b86c5" : "#e0b43d"))
+            .child(div().text_size(19).font_bold().text_color(ink).child(temp)))
           .child(div().text_size(9).font_bold().text_color(muted).pb(1).child(cond)))
+        .child(div().w_full().h(1).bg(dark ? "#c2cdd1" : "#d6dfd8"))
         .child(div().text_size(9).text_color(muted).child([wind, hum].filter(Boolean).join(" · ") || "—"))));
 }
 
@@ -450,7 +453,10 @@ export function wallCalendar(x, y, date, night) {
     .child(div().absolute().left(27).top(-5).w(16).h(8).rounded(1).bg("#d7b85f"))
     .child(div().size_full().bg(paper).border_1().border_color("#9aa2ab").flex().flex_col().items_center()
       .child(div().w_full().h(14).bg("#e05252").text_size(9).font_bold().text_color("#fffaf0").flex().items_center().justify_center().child(month))
-      .child(div().text_size(25).font_bold().text_color(ink).child(String(date.getDate())))
+      .child(div().absolute().left(0).top(14).w(1).h(38).bg("#d8dfe2"))
+      .child(div().absolute().right(0).top(14).w(1).h(38).bg("#c6ced2"))
+      .child(div().flex().items_center().justify_center().text_size(25).font_bold().text_color(ink).child(String(date.getDate())))
+      .child(div().w(38).h(1).bg("#d8dee1"))
       .child(div().flex().gap(3).children([0, 1, 2, 3].map((k) => div().size(4).rounded_full().bg(["#3d8be0", "#58a368", "#e0b43d", "#9b6bdc"][k])))));
 }
 
