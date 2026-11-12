@@ -300,10 +300,11 @@ export default class Office extends View {
     }
     if (kitchenTarget) {
       if (crossesCounter) {
-        // Cross behind the counter, then return to the front only after its right edge.
+        // Use the nearest safe side; left-side cooler targets must not backtrack past the target.
+        const exitX = target.x < g.coolerLeft ? target.x : g.counterRight + 6 * g.P;
         add("kitchen-gate", g.kitchenGateX, g.kitchenLaneY, "back");
-        add("counter-clearance", g.counterRight + 6 * g.P, g.kitchenLaneY, "back");
-        add("counter-exit", g.counterRight + 6 * g.P, g.frontLaneY, "front");
+        add("counter-clearance", exitX, g.kitchenLaneY, "back");
+        add("counter-exit", exitX, g.frontLaneY, "front");
       } else {
         add("kitchen-gate", g.kitchenGateX, g.frontLaneY, "front");
       }
@@ -346,8 +347,8 @@ export default class Office extends View {
     // The back lane runs below the raised back desks; the front lane is the actual floor line.
     const backLaneY = floorY - 6 * P;
     const frontLaneY = floorY;
-    // Keep the crossing lane above the counter top; the counter and printer occlude the lower body.
-    const kitchenLaneY = floorY - 12 * P;
+    // Reuse the back lane so the crossing stays below the wall UI and behind the counter.
+    const kitchenLaneY = backLaneY;
     const kitchenGateX = zoneX - 12 * P;
     const counterRight = zoneX + A.COUNTER_SPRITE.frame.width * P;
     const coolerRight = coolerX + A.COOLER_SPRITE.frame.width * P;
@@ -413,10 +414,11 @@ export default class Office extends View {
     const place = {};
     nappers.forEach((a, k) => { place[a.address] = { spot: "couch", x: g.couchX + (k * 10 - 1) * P, y: g.floorY, face: 1 }; });
     const hub = pizzaHere ? { left: g.zoneX - 12 * P, right: g.zoneX + A.COUNTER_SPRITE.frame.width * P - 4 * P }
-      : { left: g.coolerX - (PERSON_FRAME.width - 3) * P, right: g.coolerX + A.COOLER_SPRITE.frame.width * P - 2 * P };
+      : { left: g.coolerX - (PERSON_FRAME.width - 3) * P, right: g.coolerRight + 3 * P };
     chatters.forEach((a, k) => {
       const left = k % 2 === 0;
-      const ring = Math.floor(k / 2) * 9 * P;
+      // Keep same-side actors wider than the 16px person frame so they do not stack.
+      const ring = Math.floor(k / 2) * 18 * P;
       place[a.address] = { spot: pizzaHere ? "pizza" : "cooler", x: left ? hub.left - ring : hub.right + ring, y: g.floorY, face: left ? 1 : -1 };
     });
     for (const a of here) {
