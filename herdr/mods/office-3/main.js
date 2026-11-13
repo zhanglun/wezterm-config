@@ -291,6 +291,8 @@ export default class Office extends View {
     const targetLaneY = targetBack ? g.backLaneY : g.frontLaneY;
     const kitchenTarget = target.spot === "cooler" || target.spot === "couch" || target.spot === "pizza";
     const crossesCounter = target.spot === "cooler" || target.spot === "couch";
+    const counterCrossing = !fromBack && !targetBack
+      && ((start.x < g.counterLeft && target.x > g.counterRight) || (start.x > g.counterRight && target.x < g.counterLeft));
     if (fromBack !== targetBack) {
       add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
       add("kitchen-gate", g.kitchenGateX, fromLaneY, fromBack ? "back" : "front");
@@ -298,7 +300,19 @@ export default class Office extends View {
     } else {
       add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
     }
-    if (kitchenTarget) {
+    if (counterCrossing) {
+      // Cross the counter only on the rear lane; return to the front beyond its edge.
+      const leftToRight = start.x < target.x;
+      const leftGate = g.kitchenGateX;
+      const rightGate = g.counterRight + 6 * g.P;
+      const nearGate = leftToRight ? leftGate : rightGate;
+      const farGate = leftToRight ? rightGate : leftGate;
+      add("counter-entry", nearGate, g.frontLaneY, "front");
+      add("counter-rear-entry", nearGate, g.kitchenLaneY, "back");
+      add("counter-rear-exit", farGate, g.kitchenLaneY, "back");
+      add("counter-exit", farGate, g.frontLaneY, "front");
+      add("target-lane", target.x, targetLaneY, "front");
+    } else if (kitchenTarget) {
       if (crossesCounter) {
         // Use the nearest safe side; left-side cooler targets must not backtrack past the target.
         const exitX = target.x < g.coolerLeft ? target.x : g.counterRight + 6 * g.P;
@@ -349,13 +363,15 @@ export default class Office extends View {
     const frontLaneY = floorY;
     // Reuse the back lane so the crossing stays below the wall UI and behind the counter.
     const kitchenLaneY = backLaneY;
-    const kitchenGateX = zoneX - 12 * P;
+    const counterLeft = zoneX;
     const counterRight = zoneX + A.COUNTER_SPRITE.frame.width * P;
+    // Leave the whole person frame outside the counter before changing depth.
+    const kitchenGateX = counterLeft - (PERSON_FRAME.width + 2) * P;
     const coolerRight = coolerX + A.COOLER_SPRITE.frame.width * P;
     const couchRight = couchX + A.COUCH_SPRITE.frame.width * P;
     return {
       P, floorY, wallBottom, backLaneY, frontLaneY, kitchenLaneY, kitchenGateX,
-      counterLeft: zoneX, counterRight, coolerLeft: coolerX, coolerRight,
+      counterLeft, counterRight, coolerLeft: coolerX, coolerRight,
       couchLeft: couchX, couchRight, slot, x0, deskPos, zoneX, coolerX, couchX, doorX, plantL,
       plantR: couchX + A.COUCH_SPRITE.frame.width * P + 6 * P,
       door: { x: doorX + 2 * P, y: wallBottom + 2 * P },

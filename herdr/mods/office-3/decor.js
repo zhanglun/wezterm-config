@@ -278,12 +278,16 @@ export function weatherBoard(x, y, timeText, kind, meta, dark) {
 
 // Small architectural details that keep the short office strip from feeling flat.
 export function floorRunner(x, y, w) {
-  return div().absolute().left(x).top(y).w(w).h(12).rounded(3).bg("#7f5b43")
-    .border_1().border_color("#654632").children([
-      div().absolute().left(5).top(3).w(w - 10).h(2).bg("#a97b58"),
-      div().absolute().left(5).top(7).w(w - 10).h(1).bg("#684934"),
+  return div().absolute().left(x).top(y).w(w).h(14).rounded(3).bg("#624735")
+    .border_1().border_color("#3f3029").children([
+      div().absolute().left(3).top(2).w(w - 6).h(9).bg("#8e6649"),
+      div().absolute().left(6).top(4).w(w - 12).h(2).bg("#b4865f"),
+      div().absolute().left(6).top(8).w(w - 12).h(1).bg("#684734"),
+      div().absolute().left(3).top(11).w(w - 6).h(1).bg("#4b382e"),
+      div().absolute().left(7).top(2).w(2).h(9).bg("#a77955"),
+      div().absolute().right(7).top(2).w(2).h(9).bg("#4b382e"),
       ...Array.from({ length: Math.max(1, Math.floor(w / 42)) }, (_, k) =>
-        div().absolute().left(18 + k * 42).top(1).w(1).h(10).bg("#6c4b37")),
+        div().absolute().left(18 + k * 42).top(2).w(1).h(9).bg("#6c4b37")),
     ]);
 }
 
@@ -335,8 +339,8 @@ export function lifeProps(g, night, paperPulse) {
   const P = g.P;
   const floor = g.floorY;
   const paper = "#f4f1e8";
-  const metal = night ? "#687481" : "#8d989e";
-  const dark = night ? "#303b4c" : "#5c6268";
+  const metal = night ? "#626d72" : "#7d8987";
+  const dark = night ? "#30383d" : "#555e5e";
   return [
     // Compact printer on the counter: a bright top and paper make it readable at a glance.
     ...(() => {
@@ -356,9 +360,10 @@ export function lifeProps(g, night, paperPulse) {
       ];
     })(),
     // Small bin between the kitchen and lounge.
-    div().absolute().left(g.coolerX + 12 * P).top(floor - 8 * P).w(6 * P).h(8 * P).rounded(P).bg(night ? "#3e4653" : "#72777b"),
+    div().absolute().left(g.coolerX + 12 * P).top(floor - 8 * P).w(6 * P).h(8 * P).rounded(P).bg(night ? "#3b4547" : "#687473")
+      .border_1().border_color(night ? "#566365" : "#88938f"),
     div().absolute().left(g.coolerX + 11 * P).top(floor - 9 * P).w(8 * P).h(2 * P).rounded(P).bg(dark),
-    div().absolute().left(g.coolerX + 14 * P).top(floor - 7 * P).w(2 * P).h(P).bg(night ? "#596574" : "#9ba0a2"),
+    div().absolute().left(g.coolerX + 14 * P).top(floor - 7 * P).w(2 * P).h(P).bg(night ? "#596b6b" : "#aab5ad"),
     // Cat bowl by the couch: rim, inside, and food make it read as a bowl.
     div().absolute().left(g.couchX + 8 * P).top(floor - 3 * P).w(10 * P).h(3 * P).rounded(2 * P).bg(night ? "#53647e" : "#b56d4f"),
     div().absolute().left(g.couchX + 9 * P).top(floor - 4 * P).w(8 * P).h(P).rounded(P).bg(night ? "#8298c3" : "#e5ad78"),
@@ -402,19 +407,21 @@ export function deskAccent(status, P, away, overtime) {
 
 export function whiteboard(x, y, rows) {
   const shown = rows.filter(([, , count, show]) => show !== false && (show === true || count !== 0));
-  return div().absolute().left(x).top(y).w(150).px(8).pt(6).pb(7).bg("#fbfbf8")
-    .border_1().border_color("#7f8a96").rounded(0).flex().flex_col().text_size(10).font_bold().gap(3)
-    .child(div().flex().items_center().justify_between().text_color("#3f4b58")
+  return div().absolute().left(x).top(y).w(150).px(8).pt(6).pb(7).bg("#f4f3ea")
+    .border_2().border_color("#604532").rounded(1).flex().flex_col().text_size(10).font_bold().gap(3)
+    .child(div().absolute().left(4).top(4).size(4).rounded_full().bg("#e05252"))
+    .child(div().absolute().right(4).top(4).size(4).rounded_full().bg("#58a368"))
+    .child(div().flex().items_center().justify_between().text_color("#35444c")
       .child("TEAM STATUS")
-      .child(div().text_size(8).text_color("#7a8791").child("LIVE")))
-    .child(div().h(1).bg("#d8dee1"))
+      .child(div().px(3).h(12).bg("#d9e3de").flex().items_center().text_size(8).text_color("#456255").child("LIVE")))
+    .child(div().h(1).bg("#a7b4b0"))
     .child(div().flex().flex_col().gap(4).children(shown.map(([color, label, count]) =>
       div().flex().items_center().justify_between()
         .child(div().flex().items_center().gap(6)
           .child(div().size(6).rounded(1).bg(color).flex_none())
-          .child(div().text_color("#3a4350").child(label)))
-        .child(div().w(16).text_color("#4f5d69").text_size(10).child(String(count))))))
-    .child(div().h(3).rounded(1).bg("#dfe4e8"));
+          .child(div().text_color("#35434a").child(label)))
+        .child(div().w(16).text_color("#465862").text_size(10).child(String(count))))))
+    .child(div().h(3).rounded(1).bg("#c8d1cd"));
 }
 
 // "DAYS CLEAR" resets to a blinking 0 while someone is blocked.
@@ -512,15 +519,18 @@ export function videoWall(x, y, h, remotes) {
 export function door(x, wallBottom, P, open) {
   const w = 16 * P, h = Math.min(28 * P, wallBottom - 30);
   return div().absolute().left(x).top(wallBottom - h).w(w).h(h)
-    .child(div().absolute().left(w / 2 - 18).top(-20).w(36).h(14).rounded(2).bg("#2f9a50").flex().items_center().justify_center()
+    .border_2().border_color("#3f2d26")
+    .child(div().absolute().left(w / 2 - 18).top(-20).w(36).h(14).rounded(2).bg("#2f9a50").border_1().border_color("#1f6336").flex().items_center().justify_center()
       .text_size(9).font_bold().text_color("#eaffef").child("EXIT"))
-    .child(div().absolute().left(0).top(0).w(w).h(h).bg("#5c3a22"))
-    .child(div().absolute().left(P).top(P).w(w - 2 * P).h(h - P).bg(open ? "#1f1a16" : "#8a5a35"))
-    .when(open, (el) => el.child(div().absolute().left(P).top(h - 4 * P).w(w - 2 * P).h(3 * P).bg("#3a302a")))
+    .child(div().absolute().left(2 * P).top(2 * P).w(w - 4 * P).h(h - 2 * P).bg("#70472d"))
+    .child(div().absolute().left(3 * P).top(3 * P).w(w - 6 * P).h(h - 4 * P).bg(open ? "#1f1a16" : "#8a5a35"))
+    .child(div().absolute().left(4 * P).top(4 * P).w(w - 8 * P).h(2 * P).bg(open ? "#39302b" : "#a36c42"))
+    .when(open, (el) => el.child(div().absolute().left(3 * P).top(h - 6 * P).w(w - 6 * P).h(3 * P).bg("#3a302a")))
     .when(!open, (el) => el
-      .child(div().absolute().left(3 * P).top(4 * P).w(w - 6 * P).h(h / 2 - 6 * P).border_2().border_color("#7d4f2e"))
-      .child(div().absolute().left(3 * P).top(h / 2 + P).w(w - 6 * P).h(h / 2 - 5 * P).border_2().border_color("#7d4f2e"))
-      .child(div().absolute().left(w - 4 * P).top(h / 2).size(2 * P).rounded_full().bg("#e0b43d")));
+      .child(div().absolute().left(4 * P).top(7 * P).w(w - 8 * P).h(h / 2 - 7 * P).border_1().border_color("#6c432b"))
+      .child(div().absolute().left(4 * P).top(h / 2 + P).w(w - 8 * P).h(h / 2 - 7 * P).border_1().border_color("#6c432b"))
+      .child(div().absolute().left(w - 5 * P).top(h / 2).size(2 * P).rounded_full().bg("#e0b43d")))
+    .child(div().absolute().left(-2 * P).top(h - P).w(w + 4 * P).h(P).bg("#4b382e"));
 }
 
 export function stringLights(W, y) {
