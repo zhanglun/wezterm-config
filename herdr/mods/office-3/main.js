@@ -24,7 +24,6 @@ const MUGS_AFTER = 60 * 60 * 1000;
 const PARTY_FINISHES = 3, PARTY_WINDOW = 5 * 60 * 1000, PARTY_LENGTH = 8 * 60 * 1000;
 const GRAD_BOW = 2500;
 const COUCH_SEATS = 3;
-const MIN_DESKS = 3;
 const FRONT_ROW = 6;
 const DAY = 86400000;
 const CHAT = ["…", "☕", "lgtm", "standup?", "🍩", "ship it", "nice", "brb", "tabs > spaces", "🎉", "coffee?", "hmm"];
@@ -403,7 +402,7 @@ export default class Office extends View {
     const now = Date.now();
     setAgentOrder(list.map((a) => a.address));
 
-    const deskCount = Math.max(MIN_DESKS, here.length, ...Object.values(this.desk).map((i) => i + 1));
+    const deskCount = Math.max(here.length, ...Object.values(this.desk).map((i) => i + 1));
     const g = (this.g = this.geometry(W, H, deskCount));
     this.seat(here, g, cx);
     this.track(list, now, cx);
