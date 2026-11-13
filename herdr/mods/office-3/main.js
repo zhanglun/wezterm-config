@@ -47,16 +47,16 @@ const mins = (s) => { const [h, m] = String(s ?? "").split(":").map(Number); ret
 // Golden (sunrise/sunset) = the first/last 90 minutes of real daylight.
 function sky(hour, meta) {
   const now = hour * 60;
-  const isDay = meta?.isDay ?? null;
-  if (isDay === false || (isDay === null && (hour < 5 || hour >= 21)))
+  // Keep scene lighting on the host clock; weather API is_day may use another timezone.
+  if (hour < 5 || hour >= 21)
     return { top: "#141c38", bottom: "#2a3766", stars: true, hour };
-  if (isDay === null && hour >= 19) return { top: "#544a86", bottom: "#e07a5f", hour };
+  if (hour >= 19) return { top: "#544a86", bottom: "#e07a5f", hour };
   const sr = mins(meta?.sunrise) ?? 375, ss = mins(meta?.sunset) ?? 1065;
   if (now >= sr && now < sr + 90) return { top: "#9cc3e6", bottom: "#f4b98a", hour, golden: true };
   if (now >= ss - 90 && now < ss) return { top: "#f7c98b", bottom: "#f29a6b", hour, golden: true };
   return { top: "#7fc4f0", bottom: "#c4e6f8", hour };
 }
-const lightsDown = (hour, meta) => meta?.isDay === false || hour >= 20 || hour < 6;
+const lightsDown = (hour) => hour >= 20 || hour < 6;
 
 // WMO weather codes (Open-Meteo) to what the windows show.
 function weatherKind(code) {
@@ -429,8 +429,9 @@ export default class Office extends View {
     const chatters = idle.filter((a) => !nappers.includes(a));
     const place = {};
     nappers.forEach((a, k) => { place[a.address] = { spot: "couch", x: g.couchX + (k * 10 - 1) * P, y: g.floorY, face: 1 }; });
-    const hub = pizzaHere ? { left: g.zoneX - 12 * P, right: g.zoneX + A.COUNTER_SPRITE.frame.width * P - 4 * P }
-      : { left: g.coolerX - (PERSON_FRAME.width - 3) * P, right: g.coolerRight + 3 * P };
+    const hub = pizzaHere
+      ? { left: g.counterLeft - (PERSON_FRAME.width + 2) * P, right: g.counterRight + 6 * P }
+      : { left: g.coolerX - (PERSON_FRAME.width - 3) * P, right: g.coolerX + 20 * P };
     chatters.forEach((a, k) => {
       const left = k % 2 === 0;
       // Keep same-side actors wider than the 16px person frame so they do not stack.
@@ -523,6 +524,7 @@ export default class Office extends View {
         ...(pizzaHere ? [this.prop(A.PIZZA_BOX_SPRITE, g.zoneX, g)] : []),
         this.prop(A.COOLER_SPRITE, g.coolerX, g),
         this.prop(A.COUCH_SPRITE, g.couchX, g),
+        ...D.lifeProps(g, lightsDown(this.now.getHours(), this.weatherMeta), Math.floor(this.now.getTime() / 60000) % 3 === 0),
         ...frontPeople,
         ...graduateFrontPeople,
         ...leavingFrontPeople,
@@ -530,7 +532,6 @@ export default class Office extends View {
         ...walkingFrontPeople,
         ...graduateFrontWalking,
         ...leavingFrontWalking,
-        ...D.lifeProps(g, lightsDown(this.now.getHours(), this.weatherMeta), Math.floor(this.now.getTime() / 60000) % 3 === 0),
         ...D.petCorner(g, lightsDown(this.now.getHours(), this.weatherMeta)),
         this.prop(A.PLANT_SPRITE, g.plantR, g),
         ...(when === "winter" ? [this.prop(A.TREE_SPRITE, g.plantL - 3 * P, g)] : [this.prop(A.PLANT_SPRITE, g.plantL, g)]),

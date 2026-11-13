@@ -341,7 +341,7 @@ export const SIT = {
       7,
       "skin"
     ],
-    [8, 9, 1, 3, "skinHi"],
+    [8, 9, 1, 3, "skin"],
     [
       9,
       10,
