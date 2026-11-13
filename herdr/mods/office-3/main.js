@@ -105,6 +105,8 @@ export default class Office extends View {
     this.entering = {}; // new agents using the door-to-floor entry route
     this.seen = {}; // address -> what we knew last render: { status, pal }
     this.idleSince = {};
+    this.chatSlots = {};
+    this.napSlots = {};
     this.blockedSince = {};
     this.finishes = []; // when agents finished, for the pizza
     this.party = null; // { start }
@@ -271,7 +273,8 @@ export default class Office extends View {
   }
 
   personRoute(a, target, g, start = this.at[a.address]) {
-    const id = `${target.spot}:${target.x}:${target.y}`;
+    const catDesk = this.cat.goal === "sleep" && this.cat.phase === "sleep" ? this.cat.desk : null;
+    const id = `${target.spot}:${target.x}:${target.y}:cat:${catDesk ?? "none"}`;
     const current = this.routes[a.address];
     if (current?.id === id) return { id, points: current.points };
     const floor = g.floorY;
@@ -288,9 +291,16 @@ export default class Office extends View {
     };
     const fromLaneY = fromBack ? g.backLaneY : g.frontLaneY;
     const targetLaneY = targetBack ? g.backLaneY : g.frontLaneY;
+    const catPos = catDesk == null ? null : g.deskPos(catDesk);
+    // A front-row cat is a visual layer, not a walkable tabletop lane.
+    const catLeft = catPos ? catPos.x + 8 * g.P : 0;
+    const catRight = catPos ? catPos.x + 40 * g.P : 0;
+    const crossesCatDesk = Boolean(catPos && !catPos.back
+      && ((start.x < catLeft && target.x > catRight) || (start.x > catRight && target.x < catLeft)));
     const kitchenTarget = target.spot === "cooler" || target.spot === "couch" || target.spot === "pizza";
-    const crossesCounter = target.spot === "cooler" || target.spot === "couch";
-    const counterCrossing = !fromBack && !targetBack
+    const crossesCounter = target.spot === "couch";
+    // The cooler is approached along the floor; only the couch still needs the rear detour.
+    const counterCrossing = target.spot !== "cooler" && !fromBack && !targetBack
       && ((start.x < g.counterLeft && target.x > g.counterRight) || (start.x > g.counterRight && target.x < g.counterLeft));
     if (fromBack !== targetBack) {
       add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
@@ -299,17 +309,19 @@ export default class Office extends View {
     } else {
       add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
     }
-    if (counterCrossing) {
-      // Cross the counter only on the rear lane; return to the front beyond its edge.
+    if (crossesCatDesk || counterCrossing) {
+      // Cross furniture on the existing rear lane; never put a person on the tabletop plane.
       const leftToRight = start.x < target.x;
-      const leftGate = g.kitchenGateX;
-      const rightGate = g.counterRight + 6 * g.P;
+      const catEntry = catLeft - (PERSON_FRAME.width + 2) * g.P;
+      const catExit = catRight + 2 * g.P;
+      const leftGate = crossesCatDesk ? Math.min(catEntry, g.kitchenGateX) : g.kitchenGateX;
+      const rightGate = crossesCatDesk ? Math.max(catExit, g.counterRight + 6 * g.P) : g.counterRight + 6 * g.P;
       const nearGate = leftToRight ? leftGate : rightGate;
       const farGate = leftToRight ? rightGate : leftGate;
-      add("counter-entry", nearGate, g.frontLaneY, "front");
-      add("counter-rear-entry", nearGate, g.kitchenLaneY, "back");
-      add("counter-rear-exit", farGate, g.kitchenLaneY, "back");
-      add("counter-exit", farGate, g.frontLaneY, "front");
+      add("furniture-entry", nearGate, g.frontLaneY, "front");
+      add("furniture-rear-entry", nearGate, g.kitchenLaneY, "back");
+      add("furniture-rear-exit", farGate, g.kitchenLaneY, "back");
+      add("furniture-exit", farGate, g.frontLaneY, "front");
       add("target-lane", target.x, targetLaneY, "front");
     } else if (kitchenTarget) {
       if (crossesCounter) {
@@ -425,16 +437,44 @@ export default class Office extends View {
     // gather around the cooler (or the pizza), alternating sides, further out each pair.
     const idle = here.filter((a) => a.status === "idle").sort((a, b) => this.idleSince[a.address] - this.idleSince[b.address]);
     const nappers = pizzaHere ? [] : idle.filter((a) => now - this.idleSince[a.address] > NAP_AFTER).slice(0, COUCH_SEATS);
+    const activeNappers = new Set(nappers.map((a) => a.address));
+    for (const address of Object.keys(this.napSlots)) {
+      if (!activeNappers.has(address)) delete this.napSlots[address];
+    }
+    const usedNapSlots = new Set(Object.values(this.napSlots));
+    for (const a of nappers) {
+      if (this.napSlots[a.address] != null) continue;
+      let slot = 0;
+      while (usedNapSlots.has(slot)) slot++;
+      this.napSlots[a.address] = slot;
+      usedNapSlots.add(slot);
+    }
     const chatters = idle.filter((a) => !nappers.includes(a));
+    const activeChatters = new Set(chatters.map((a) => a.address));
+    for (const address of Object.keys(this.chatSlots)) {
+      if (!activeChatters.has(address)) delete this.chatSlots[address];
+    }
+    const usedChatSlots = new Set(Object.values(this.chatSlots));
+    for (const a of chatters) {
+      if (this.chatSlots[a.address] != null) continue;
+      let slot = 0;
+      while (usedChatSlots.has(slot)) slot++;
+      this.chatSlots[a.address] = slot;
+      usedChatSlots.add(slot);
+    }
     const place = {};
-    nappers.forEach((a, k) => { place[a.address] = { spot: "couch", x: g.couchX + (k * 10 - 1) * P, y: g.floorY, face: 1 }; });
+    nappers.forEach((a) => {
+      const slot = this.napSlots[a.address];
+      place[a.address] = { spot: "couch", x: g.couchX + (slot * 10 - 1) * P, y: g.floorY, face: 1 };
+    });
     const hub = pizzaHere
       ? { left: g.counterLeft - (PERSON_FRAME.width + 2) * P, right: g.counterRight + 6 * P }
       : { left: g.coolerX - (PERSON_FRAME.width - 3) * P, right: g.coolerX + 20 * P };
-    chatters.forEach((a, k) => {
-      const left = k % 2 === 0;
+    chatters.forEach((a) => {
+      const slot = this.chatSlots[a.address];
+      const left = slot % 2 === 0;
       // Keep same-side actors wider than the 16px person frame so they do not stack.
-      const ring = Math.floor(k / 2) * 18 * P;
+      const ring = Math.floor(slot / 2) * 18 * P;
       place[a.address] = { spot: pizzaHere ? "pizza" : "cooler", x: left ? hub.left - ring : hub.right + ring, y: g.floorY, face: left ? 1 : -1 };
     });
     for (const a of here) {
