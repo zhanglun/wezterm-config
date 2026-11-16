@@ -359,8 +359,8 @@ export default class Office extends View {
     const doorW = 16 * P;
     const kitchen = A.COUNTER_SPRITE.frame.width * P + gap + A.COOLER_SPRITE.frame.width * P + 22 * P + A.COUCH_SPRITE.frame.width * P + 6 * P + A.PLANT_SPRITE.frame.width * P;
     const room = doorW + 20 + A.PLANT_SPRITE.frame.width * P + 10 + desksW + 50 + kitchen;
-    // Door pinned toward the left edge so it sits in a solid wall pier, not on the glass.
-    const doorX = Math.max(8, Math.min(Math.round((W - room) / 2), 48));
+    // Pin the door to the left wall; desk count must not move the wall fixtures.
+    const doorX = 48;
     const plantL = doorX + doorW + 20;
     const x0 = plantL + A.PLANT_SPRITE.frame.width * P + 10;
     const zoneX = x0 + desksW + 50;
@@ -613,14 +613,17 @@ export default class Office extends View {
     }));
     const blockedNow = list.some((a) => a.status === "blocked");
     const wbW = 150;
-    const wbX = Math.min(zoneX, W - wbW - 16);
-    const wx = Math.max(60, wbX - 162);
+    // Keep wall boards anchored to the room, not to the number of desk slots below.
+    const signX = g.doorX + 16 * P + 32;
+    const calendarX = Math.round(W * 0.36) - 35;
+    const wx = Math.round(W * 0.55);
+    const wbX = Math.min(Math.round(W * 0.67), W - wbW - 16);
     const signH = Math.min(74, Math.max(48, wallBottom - 22));
-    els.push(D.incidentSign(g.plantL + 12, 10, signH, Math.floor((now - this.incident) / DAY), blockedNow));
-    els.push(D.wallCalendar(Math.round((g.x0 + zoneX) / 2) - 35, 14, this.now, lightsDown(this.now.getHours(), this.weatherMeta)));
+    els.push(D.incidentSign(signX, 10, signH, Math.floor((now - this.incident) / DAY), blockedNow));
+    els.push(D.wallCalendar(calendarX, 14, this.now, lightsDown(this.now.getHours(), this.weatherMeta)));
     if (remotes.length) {
-      const vidX = Math.max(g.x0 + 10, wx - 176);
-      const vidY = vidX < Math.round((g.x0 + zoneX) / 2) + 50 ? Math.max(8, Math.min(98, wallBottom - 88)) : 8;
+      const vidX = Math.max(60, wx - 176);
+      const vidY = vidX < calendarX + 85 ? Math.max(8, Math.min(98, wallBottom - 88)) : 8;
       els.push(D.videoWall(vidX, vidY, Math.min(signH + 4, wallBottom - vidY - 4), remotes));
     }
     els.push(D.door(g.doorX, wallBottom, P, now < (this.doorUntil ?? 0)));

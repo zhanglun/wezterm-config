@@ -519,7 +519,6 @@ export function videoWall(x, y, h, remotes) {
 export function door(x, wallBottom, P, open) {
   const w = 16 * P, h = Math.min(28 * P, wallBottom - 30);
   return div().absolute().left(x).top(wallBottom - h).w(w).h(h)
-    .border_2().border_color("#3f2d26")
     .child(div().absolute().left(w / 2 - 18).top(-20).w(36).h(14).rounded(2).bg("#2f9a50").border_1().border_color("#1f6336").flex().items_center().justify_center()
       .text_size(9).font_bold().text_color("#eaffef").child("EXIT"))
     .child(div().absolute().left(2 * P).top(2 * P).w(w - 4 * P).h(h - 2 * P).bg("#70472d"))
