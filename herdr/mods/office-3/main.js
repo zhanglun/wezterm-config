@@ -302,20 +302,33 @@ export default class Office extends View {
     // The cooler is approached along the floor; only the couch still needs the rear detour.
     const counterCrossing = target.spot !== "cooler" && !fromBack && !targetBack
       && ((start.x < g.counterLeft && target.x > g.counterRight) || (start.x > g.counterRight && target.x < g.counterLeft));
-    if (fromBack !== targetBack) {
+    const catEntry = catLeft - (PERSON_FRAME.width + 2) * g.P;
+    const catExit = catRight + 2 * g.P;
+    const furnitureCrossing = crossesCatDesk || counterCrossing;
+    const leftGate = crossesCatDesk && counterCrossing ? Math.min(catEntry, g.kitchenGateX)
+      : crossesCatDesk ? catEntry : g.kitchenGateX;
+    const rightGate = crossesCatDesk && counterCrossing ? Math.max(catExit, g.counterRight + 6 * g.P)
+      : crossesCatDesk ? catExit : g.counterRight + 6 * g.P;
+    if (fromBack !== targetBack && crossesCatDesk) {
+      // Change depth on the near side when entering the rear lane, and on the far side when leaving it.
+      const leftToRight = start.x < target.x;
+      const transitionX = targetBack
+        ? (leftToRight ? leftGate : rightGate)
+        : (leftToRight ? rightGate : leftGate);
+      add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
+      add("cat-depth-gate", transitionX, fromLaneY, fromBack ? "back" : "front");
+      add("cat-depth-transition", transitionX, targetBack ? g.kitchenLaneY : g.frontLaneY, targetBack ? "back" : "front");
+      add("target-lane", target.x, targetLaneY, targetBack ? "back" : "front");
+    } else if (fromBack !== targetBack) {
       add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
       add("kitchen-gate", g.kitchenGateX, fromLaneY, fromBack ? "back" : "front");
       add("target-lane", g.kitchenGateX, crossesCounter ? g.kitchenLaneY : targetLaneY, crossesCounter ? "back" : (targetBack ? "back" : "front"));
     } else {
       add("source-lane", start.x, fromLaneY, fromBack ? "back" : "front");
     }
-    if (crossesCatDesk || counterCrossing) {
+    if (furnitureCrossing && !(fromBack !== targetBack && crossesCatDesk)) {
       // Cross furniture on the existing rear lane; never put a person on the tabletop plane.
       const leftToRight = start.x < target.x;
-      const catEntry = catLeft - (PERSON_FRAME.width + 2) * g.P;
-      const catExit = catRight + 2 * g.P;
-      const leftGate = crossesCatDesk ? Math.min(catEntry, g.kitchenGateX) : g.kitchenGateX;
-      const rightGate = crossesCatDesk ? Math.max(catExit, g.counterRight + 6 * g.P) : g.counterRight + 6 * g.P;
       const nearGate = leftToRight ? leftGate : rightGate;
       const farGate = leftToRight ? rightGate : leftGate;
       add("furniture-entry", nearGate, g.frontLaneY, "front");
@@ -323,7 +336,7 @@ export default class Office extends View {
       add("furniture-rear-exit", farGate, g.kitchenLaneY, "back");
       add("furniture-exit", farGate, g.frontLaneY, "front");
       add("target-lane", target.x, targetLaneY, "front");
-    } else if (kitchenTarget) {
+    } else if (kitchenTarget && !(fromBack !== targetBack && crossesCatDesk)) {
       if (crossesCounter) {
         // Use the nearest safe side; left-side cooler targets must not backtrack past the target.
         const exitX = target.x < g.coolerLeft ? target.x : g.counterRight + 6 * g.P;
@@ -360,7 +373,7 @@ export default class Office extends View {
     const kitchen = A.COUNTER_SPRITE.frame.width * P + gap + A.COOLER_SPRITE.frame.width * P + 22 * P + A.COUCH_SPRITE.frame.width * P + 6 * P + A.PLANT_SPRITE.frame.width * P;
     const room = doorW + 20 + A.PLANT_SPRITE.frame.width * P + 10 + desksW + 50 + kitchen;
     // Pin the door to the left wall; desk count must not move the wall fixtures.
-    const doorX = 48;
+    const doorX = Math.max(8, Math.min(48, W - doorW - 8));
     const plantL = doorX + doorW + 20;
     const x0 = plantL + A.PLANT_SPRITE.frame.width * P + 10;
     const zoneX = x0 + desksW + 50;
@@ -614,10 +627,21 @@ export default class Office extends View {
     const blockedNow = list.some((a) => a.status === "blocked");
     const wbW = 150;
     // Keep wall boards anchored to the room, not to the number of desk slots below.
-    const signX = g.doorX + 16 * P + 32;
-    const calendarX = Math.round(W * 0.36) - 35;
-    const wx = Math.round(W * 0.55);
-    const wbX = Math.min(Math.round(W * 0.67), W - wbW - 16);
+    const boardGap = 14;
+    const signW = 112, calendarW = 70, weatherW = 150;
+    const boardRowW = signW + calendarW + weatherW + wbW + boardGap * 3;
+    const preferredSignX = g.doorX + 16 * P + 32;
+    const preferredCalendarX = Math.round(W * 0.36) - 35;
+    const preferredWeatherX = Math.round(W * 0.55);
+    const preferredStatusX = Math.min(Math.round(W * 0.67), W - wbW - 16);
+    const compactBoards = preferredStatusX + wbW > W - 8
+      || preferredWeatherX + weatherW + boardGap > preferredStatusX
+      || preferredCalendarX + calendarW + boardGap > preferredWeatherX;
+    const boardStart = Math.max(8, Math.min(preferredSignX, W - boardRowW - 8));
+    const signX = compactBoards ? boardStart : preferredSignX;
+    const calendarX = compactBoards ? signX + signW + boardGap : Math.max(preferredCalendarX, signX + signW + boardGap);
+    const wx = compactBoards ? calendarX + calendarW + boardGap : Math.max(preferredWeatherX, calendarX + calendarW + boardGap);
+    const wbX = compactBoards ? wx + weatherW + boardGap : Math.max(preferredStatusX, wx + weatherW + boardGap);
     const signH = Math.min(74, Math.max(48, wallBottom - 22));
     els.push(D.incidentSign(signX, 10, signH, Math.floor((now - this.incident) / DAY), blockedNow));
     els.push(D.wallCalendar(calendarX, 14, this.now, lightsDown(this.now.getHours(), this.weatherMeta)));
