@@ -403,7 +403,7 @@ export default class Office extends View {
     const coolerRight = coolerX + A.COOLER_SPRITE.frame.width * P;
     const couchRight = couchX + A.COUCH_SPRITE.frame.width * P;
     return {
-      P, floorY, wallBottom, backLaneY, frontLaneY, kitchenLaneY, kitchenGateX,
+      P, width: W, floorY, wallBottom, backLaneY, frontLaneY, kitchenLaneY, kitchenGateX,
       counterLeft, counterRight, coolerLeft: coolerX, coolerRight,
       couchLeft: couchX, couchRight, slot, x0, deskPos, zoneX, coolerX, couchX, doorX, plantL,
       plantR: couchX + A.COUCH_SPRITE.frame.width * P + 6 * P,
@@ -956,11 +956,13 @@ export default class Office extends View {
     const text = (a.title || a.tab_name || a.program?.name || "thinking…").replace(/\s+/g, " ").trim();
     const x = at.x + 8 * P;
     const y = at.y - PERSON_FRAME.height * P + (PERSON_FRAME.height - (at.headTop ?? 22)) * P;
-    return div().absolute().left(Math.max(4, x - 20)).top(Math.max(2, y - 54))
-      .child(div().max_w(260).px(8).py(4).rounded(10).bg("#ffffff").border_1().border_color("#3b3b44")
+    const bubbleW = Math.min(260, Math.max(120, g.width - 16));
+    const bubbleX = Math.max(8, Math.min(g.width - bubbleW - 8, x - 20));
+    return div().absolute().left(bubbleX).top(Math.max(2, y - 54))
+      .child(div().w(bubbleW).px(8).py(4).rounded(4).bg("#fffdf7").border_1().border_color("#3b3b44")
         .text_size(11).text_color("#3b3b44").child(div().truncate().child(`💭 ${text}`)))
-      .child(div().absolute().left(16).top(26).size(7).rounded_full().bg("#ffffff").border_1().border_color("#3b3b44"))
-      .child(div().absolute().left(22).top(35).size(4).rounded_full().bg("#ffffff").border_1().border_color("#3b3b44"));
+      .child(div().absolute().left(Math.max(12, Math.min(bubbleW - 24, x - bubbleX + 16))).top(26).size(7).rounded_full().bg("#fffdf7").border_1().border_color("#3b3b44"))
+      .child(div().absolute().left(Math.max(18, Math.min(bubbleW - 18, x - bubbleX + 22))).top(35).size(4).rounded_full().bg("#fffdf7").border_1().border_color("#3b3b44"));
   }
 
   part(list, pal, face, p = this.g?.P ?? DEFAULT_SCALE) {
@@ -1096,7 +1098,7 @@ export default class Office extends View {
   }
 
   bubble(top, color, p = DEFAULT_SCALE) {
-    return div().absolute().left((PERSON_FRAME.width * p) / 2 - 4).top(top).px(5).h(16).flex().items_center().rounded(5)
-      .bg("#fffdf7").border_1().border_color(color).text_size(11).font_bold().text_color(color).whitespace_nowrap();
+    return div().absolute().left((PERSON_FRAME.width * p) / 2 - 4).top(top).px(5).h(16).flex().items_center().rounded(3)
+      .bg("#fffdf7").border_1().border_color(color).text_size(10).font_bold().text_color(color).whitespace_nowrap();
   }
 }

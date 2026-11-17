@@ -260,7 +260,7 @@ export function weatherBoard(x, y, timeText, kind, meta, dark) {
   const panel = dark ? "#dce4e5" : "#eef2ed";
   const ink = dark ? "#202a38" : "#1d1d24";
   const muted = dark ? "#536273" : "#5a6b5f";
-  return div().absolute().left(x).top(y).w(150).rounded(0).overflow_hidden().border_1().border_color(dark ? "#52647a" : "#84958b")
+  return div().absolute().left(x).top(y).w(150).rounded(0).overflow_hidden().border_2().border_color(dark ? "#52647a" : "#84958b")
     .child(div().w_full().h(20).px(6).bg(dark ? "#26364a" : "#3a5a48").flex().items_center().justify_between().text_color("#eef5f0")
       .child(div().truncate().text_size(9).font_bold().child(place))
       .child(div().text_size(11).font_bold().child(timeText)))
@@ -542,7 +542,8 @@ export function stringLights(W, y) {
 }
 
 export function banner(W, y, text, bg) {
-  return div().absolute().left(W / 2 - 110).top(y).w(220).h(22).rounded(3).bg(bg).flex().items_center().justify_center()
+  const w = Math.min(220, Math.max(120, W - 24));
+  return div().absolute().left((W - w) / 2).top(y).w(w).h(22).rounded(3).bg(bg).flex().items_center().justify_center()
     .text_size(12).font_bold().text_color("#fffaf0").child(text);
 }
 
