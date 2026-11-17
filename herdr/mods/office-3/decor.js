@@ -253,8 +253,8 @@ function weatherIcon(kind, dark) {
 
 export function weatherBoard(x, y, timeText, kind, meta, dark) {
   const cond = { clear: "CLEAR", partly: "PARTLY", clouds: "CLOUDY", fog: "FOG", drizzle: "DRIZZLE", rain: "RAIN", snow: "SNOW", storm: "STORM" }[kind] ?? "WEATHER";
-  const temp = meta?.temp == null ? "--°" : `${meta.temp}°C`;
-  const wind = meta?.wind == null ? null : `${meta.wind} km/h`;
+  const temp = meta?.loading ? "LOADING" : meta?.error ? "OFFLINE" : meta?.temp == null ? "--°" : `${meta.temp}°C`;
+  const wind = meta?.loading || meta?.error ? null : meta?.wind == null ? null : `${meta.wind} km/h`;
   const hum = meta?.hum == null ? null : `${meta.hum}%`;
   const place = meta?.place ?? "LOCAL";
   const panel = dark ? "#dce4e5" : "#eef2ed";

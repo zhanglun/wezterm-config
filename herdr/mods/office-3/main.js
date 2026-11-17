@@ -116,6 +116,7 @@ export default class Office extends View {
     this.away = [];
     this.hovered = null;
     this.weather = null;
+    this.weatherMeta = { loading: true };
     this.started = false;
     this.cat = { goal: "sit", desk: null, since: Date.now(), phase: "floor" };
     this.now = new Date();
@@ -137,12 +138,17 @@ export default class Office extends View {
           const j = await r.json();
           if (j?.status === "success" && Number.isFinite(j.lat)) this.where = { lat: j.lat.toFixed(2), lon: j.lon.toFixed(2), tz: j.timezone };
         }
-        if (!this.where) return;
+        if (!this.where) {
+          this.weatherMeta = { loading: false, error: true, place: "LOCAL" };
+          cx.notify();
+          return;
+        }
         const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${this.where.lat}&longitude=${this.where.lon}&current=weather_code,temperature_2m,wind_speed_10m,relative_humidity_2m,is_day&daily=sunrise,sunset&timezone=auto`);
         const j = await r.json();
         const current = j.current ?? {};
         this.weather = weatherKind(current.weather_code ?? 0);
         this.weatherMeta = {
+          loading: false,
           temp: Number.isFinite(current.temperature_2m) ? Math.round(current.temperature_2m) : null,
           wind: Number.isFinite(current.wind_speed_10m) ? Math.round(current.wind_speed_10m) : null,
           hum: Number.isFinite(current.relative_humidity_2m) ? Math.round(current.relative_humidity_2m) : null,
@@ -152,7 +158,10 @@ export default class Office extends View {
           place: (this.where.tz || j.timezone || "").split("/").pop()?.replaceAll("_", " ") ?? "local",
         };
         cx.notify();
-      } catch {}
+      } catch {
+        this.weatherMeta = { loading: false, error: true, place: "LOCAL" };
+        cx.notify();
+      }
     });
   }
 
@@ -634,28 +643,32 @@ export default class Office extends View {
     const preferredCalendarX = Math.round(W * 0.36) - 35;
     const preferredWeatherX = Math.round(W * 0.55);
     const preferredStatusX = Math.min(Math.round(W * 0.67), W - wbW - 16);
-    const compactBoards = preferredStatusX + wbW > W - 8
-      || preferredWeatherX + weatherW + boardGap > preferredStatusX
-      || preferredCalendarX + calendarW + boardGap > preferredWeatherX;
+    // Leave enough room for the fixed wall cards before switching to the compact row.
+    const compactBoards = W < 760;
+    const ultraCompactBoards = W < 390;
     const boardStart = Math.max(8, Math.min(preferredSignX, W - boardRowW - 8));
     const signX = compactBoards ? boardStart : preferredSignX;
     const calendarX = compactBoards ? signX + signW + boardGap : Math.max(preferredCalendarX, signX + signW + boardGap);
-    const wx = compactBoards ? calendarX + calendarW + boardGap : Math.max(preferredWeatherX, calendarX + calendarW + boardGap);
-    const wbX = compactBoards ? wx + weatherW + boardGap : Math.max(preferredStatusX, wx + weatherW + boardGap);
+    const wx = ultraCompactBoards ? 8 : compactBoards ? calendarX + calendarW + boardGap : Math.max(preferredWeatherX, calendarX + calendarW + boardGap);
+    const wbX = Math.max(preferredStatusX, wx + weatherW + boardGap);
+    const topY = 10;
+    const weatherY = ultraCompactBoards ? 92 : topY;
     const signH = Math.min(74, Math.max(48, wallBottom - 22));
-    els.push(D.incidentSign(signX, 10, signH, Math.floor((now - this.incident) / DAY), blockedNow));
-    els.push(D.wallCalendar(calendarX, 14, this.now, lightsDown(this.now.getHours(), this.weatherMeta)));
+    els.push(D.incidentSign(signX, topY, signH, Math.floor((now - this.incident) / DAY), blockedNow));
+    if (!ultraCompactBoards) els.push(D.wallCalendar(calendarX, topY, this.now, lightsDown(this.now.getHours(), this.weatherMeta)));
     if (remotes.length) {
       const vidX = Math.max(60, wx - 176);
-      const vidY = vidX < calendarX + 85 ? Math.max(8, Math.min(98, wallBottom - 88)) : 8;
-      els.push(D.videoWall(vidX, vidY, Math.min(signH + 4, wallBottom - vidY - 4), remotes));
+      if (!compactBoards) {
+        const vidY = vidX < calendarX + 85 ? Math.max(8, Math.min(98, wallBottom - 88)) : topY;
+        els.push(D.videoWall(vidX, vidY, Math.min(signH + 4, wallBottom - vidY - 4), remotes));
+      }
     }
     els.push(D.door(g.doorX, wallBottom, P, now < (this.doorUntil ?? 0)));
-    els.push(D.weatherBoard(wx, 14, clock(this.now), this.weather, this.weatherMeta, lightsDown(this.now.getHours(), this.weatherMeta)));
+    els.push(D.weatherBoard(wx, weatherY, clock(this.now), this.weather, this.weatherMeta, lightsDown(this.now.getHours(), this.weatherMeta)));
     const count = (st) => list.filter((a) => a.status === st).length;
     const napping = list.filter((a) => this.at[a.address]?.spot === "couch").length;
     const interns = list.reduce((n, a) => n + descendants(all, a.address).length, 0);
-    els.push(D.whiteboard(wbX, 14, [
+    if (!compactBoards) els.push(D.whiteboard(wbX, topY, [
       ["#3d8be0", "WORK", count("working")],
       ["#58a368", "DONE", count("done")],
       ["#e05252", "BLOCK", count("blocked")],
@@ -672,8 +685,9 @@ export default class Office extends View {
 
   sign(W, g) {
     return div().absolute().left(W / 2 - 140).top(g.wallBottom - 34).w(280).py(4).bg("#26313dcc")
-      .border_1().border_color("#657585").text_size(10).text_color("#eef5f0").flex().justify_center()
-      .child("NO AGENTS · START ONE TO OPEN THE OFFICE");
+      .border_1().border_color("#657585").text_size(10).text_color("#eef5f0").flex().flex_col().items_center().justify_center().gap(2)
+      .child(div().text_size(11).child("NO AGENTS"))
+      .child(div().text_size(9).text_color("#cbd6dd").child("START ONE TO OPEN THE OFFICE"));
   }
 
   renderSprite(sprite, palette, scale) {
