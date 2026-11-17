@@ -370,7 +370,8 @@ export default class Office extends View {
   }
 
   geometry(W, H, deskCount) {
-    const P = Math.max(3, Math.min(6, Math.floor(H / 60)));
+    // Keep the pixel art crisp without letting a 250px office turn into giant blocks.
+    const P = Math.max(3, Math.min(5, Math.floor(H / 72)));
     const floorY = H - 30;
     const wallBottom = floorY - 14 * P;
     const slot = DESK_FRAME.width * P;
@@ -621,6 +622,15 @@ export default class Office extends View {
       D.glassWall(pierW, W - pierW, wallBottom, s, windowWeather),
       div().absolute().left(0).top(wallBottom - 4).w(W).h(4).bg("#7a5c3e"),
       div().absolute().left(0).top(wallBottom).w(W).h(H - wallBottom).bg("#b9895a"),
+      // Subtle joinery makes the large floor plane read as timber instead of a flat fill.
+      ...Array.from({ length: Math.max(1, Math.floor((H - wallBottom) / 28)) }, (_, k) =>
+        div().absolute().left(0).top(wallBottom + 18 + k * 28).w(W).h(2).bg(k % 2 ? "#c79563" : "#956b4a").opacity(0.38)),
+      ...Array.from({ length: Math.max(4, Math.floor(W / 72)) }, (_, k) =>
+        div().absolute().left(26 + k * 72).top(wallBottom + 26 + (k % 2) * 28).size(3).rounded_full().bg("#795338").opacity(0.45)),
+      // The plaster pier gets a restrained panel rhythm around the door.
+      div().absolute().left(0).top(18).w(g.plantL - 10).h(2).bg("#d2c09f").opacity(0.8),
+      div().absolute().left(g.plantL - 12).top(24).w(2).h(wallBottom - 30).bg("#d1bd98").opacity(0.7),
+      div().absolute().left(18).top(wallBottom - 36).w(Math.max(60, g.doorX - 6)).h(2).bg("#c4a77d").opacity(0.8),
       D.floorRunner(Math.max(24, g.doorX - 18), H - 25, Math.min(W - 48, zoneX - g.doorX + 210)),
       ...D.ceilingLights([Math.max(90, g.doorX + 110), Math.round(W * 0.5), Math.min(W - 90, zoneX + 160)]),
       ...D.roomDetails(W, H, g, lightsDown(this.now.getHours(), this.weatherMeta), this.weather),
@@ -708,7 +718,34 @@ export default class Office extends View {
     const done = st === "done" && !away;
     const overtime = st === "working" && tab?.working_since && Date.now() - tab.working_since > MUGS_AFTER;
     const plate = a ? this.plate(a) : null;
+    const detail = a ? (a.address.split("").reduce((n, ch) => n + ch.charCodeAt(0), 0) % 3) : -1;
+    const underDeskDetail = detail === 0 ? [
+      div().absolute().left(17 * P).top(25 * P).w(5 * P).h(3 * P).rounded(P).bg("#4f5964").border_1().border_color("#78838c"),
+      div().absolute().left(19 * P).top(28 * P).w(P).h(2 * P).bg("#252b33"),
+    ] : detail === 1 ? [
+      div().absolute().left(28 * P).top(26 * P).w(4 * P).h(3 * P).bg("#9a6442").border_1().border_color("#5c3a22"),
+      div().absolute().left(29 * P).top(25 * P).w(2 * P).h(P).bg("#d9b37c"),
+    ] : [
+      div().absolute().left(17 * P).top(27 * P).w(8 * P).h(2 * P).bg("#2e3743"),
+      div().absolute().left(21 * P).top(28 * P).w(P).h(2 * P).bg("#e05252"),
+    ];
+    const deskDetail = detail === 0 ? [
+      div().absolute().left(7 * P).top(13 * P).w(3 * P).h(4 * P).bg("#4fb866"),
+      div().absolute().left(6 * P).top(16 * P).w(5 * P).h(2 * P).rounded(P).bg("#c0643f"),
+      div().absolute().left(8 * P).top(11 * P).w(P).h(3 * P).bg("#2b7541"),
+    ] : detail === 1 ? [
+      div().absolute().left(17 * P).top(12 * P).w(5 * P).h(4 * P).bg("#3d4a6b").border_1().border_color("#7082a9"),
+      div().absolute().left(18 * P).top(13 * P).w(3 * P).h(P).bg("#e0b43d"),
+      div().absolute().left(21 * P).top(15 * P).w(4 * P).h(P).bg("#e05252"),
+    ] : [
+      div().absolute().left(8 * P).top(15 * P).w(7 * P).h(2 * P).bg("#f0d99a").border_1().border_color("#b99b32"),
+      div().absolute().left(9 * P).top(14 * P).w(5 * P).h(P).bg("#e0b43d"),
+      div().absolute().left(15 * P).top(15 * P).w(P).h(3 * P).bg("#6b4a30"),
+    ];
     return actor(DESK_FRAME, pos.x, pos.y, [
+        div().absolute().left(10 * P).top(29 * P).w(27 * P).h(P).rounded(P).bg("#4c382d").opacity(0.34),
+        ...underDeskDetail,
+        ...deskDetail,
         this.renderSprite(A.CHAIR_SPRITE, pal, P),
         this.renderSprite(A.DESK_SPRITE, pal, P),
 

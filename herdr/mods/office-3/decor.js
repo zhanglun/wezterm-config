@@ -327,6 +327,72 @@ export function roomDetails(W, H, g, night, weather) {
     div().absolute().left(g.x0).top(30).w(Math.max(80, g.zoneX - g.x0 + 100)).h(2).bg("#59636c").opacity(0.8),
     div().absolute().left(g.x0 + 34 * P).top(30).w(2).h(10).bg("#59636c"),
     div().absolute().left(g.x0 + 34 * P - 8).top(39).w(18).h(2).rounded(1).bg(night ? "#e4bc72" : "#c5a66f").opacity(0.9),
+    div().absolute().left(g.x0 + 34 * P - 3).top(41).w(2).h(7).bg("#59636c").opacity(0.75),
+    div().absolute().left(g.x0 + 34 * P + 7).top(41).w(2).h(7).bg("#59636c").opacity(0.75),
+    // A small shelf gives the long desk wall a human-scale visual anchor.
+    div().absolute().left(g.x0 + 8 * P).top(floor - 39 * P).w(36 * P).h(2 * P).bg("#5b3d2a")
+      .border_1().border_color("#9b6a45"),
+    div().absolute().left(g.x0 + 11 * P).top(floor - 47 * P).w(7 * P).h(8 * P).bg(night ? "#4c5d82" : "#d9b27a")
+      .border_1().border_color("#6d4a35"),
+    div().absolute().left(g.x0 + 21 * P).top(floor - 45 * P).w(3 * P).h(6 * P).bg("#e05252"),
+    div().absolute().left(g.x0 + 25 * P).top(floor - 46 * P).w(3 * P).h(7 * P).bg("#3d8be0"),
+    div().absolute().left(g.x0 + 29 * P).top(floor - 44 * P).w(3 * P).h(5 * P).bg("#58a368"),
+    div().absolute().left(g.x0 + 36 * P).top(floor - 45 * P).w(5 * P).h(6 * P).bg("#c99640")
+      .border_1().border_color("#6d4a35"),
+    // Soft contact shadows keep the lower furniture from floating above the floorboards.
+    div().absolute().left(g.x0).top(floor - P).w(Math.max(80, g.zoneX - g.x0 - 12 * P)).h(P).bg(night ? "#30353e" : "#795638").opacity(0.28),
+    div().absolute().left(g.couchX - 4 * P).top(floor - P).w(44 * P).h(P).bg(night ? "#30353e" : "#795638").opacity(0.32),
+    // A compact notice board breaks up the blank pier beside the entrance.
+    ...(() => {
+      const bx = Math.max(12, g.doorX + 58);
+      const by = Math.min(g.wallBottom - 52, 112);
+      return [
+        div().absolute().left(bx).top(by).w(58).h(42).bg(night ? "#39465d" : "#9a6845")
+          .border_2().border_color(night ? "#7084a2" : "#60402e"),
+        div().absolute().left(bx + 4).top(by + 6).w(50).h(31).bg(night ? "#d6dbe4" : "#f0d99a")
+          .border_1().border_color(night ? "#8c9aad" : "#c19852"),
+        div().absolute().left(bx + 8).top(by + 11).w(13).h(8).bg("#e05252").border_1().border_color("#9f3d3d"),
+        div().absolute().left(bx + 25).top(by + 9).w(16).h(12).bg("#3d8be0").border_1().border_color("#2b5f9c"),
+        div().absolute().left(bx + 10).top(by + 26).w(8).h(6).bg("#e0b43d"),
+        div().absolute().left(bx + 35).top(by + 25).w(12).h(8).bg("#58a368"),
+        div().absolute().left(bx + 8).top(by + 2).w(22).h(3).bg(night ? "#d6dbe4" : "#f5edcf"),
+        div().absolute().left(bx + 33).top(by + 2).w(15).h(3).bg(night ? "#8495b0" : "#d9b27a"),
+        div().absolute().left(bx + 26).top(by - 4).size(5).rounded_full().bg("#e05252"),
+      ];
+    })(),
+    // A narrow rail adds a functional detail above the kitchen counter.
+    div().absolute().left(g.zoneX + 2 * P).top(floor - 39 * P).w(42 * P).h(P).bg(night ? "#566779" : "#72513a"),
+    div().absolute().left(g.zoneX + 8 * P).top(floor - 46 * P).w(7 * P).h(7 * P).bg("#e0b43d").border_1().border_color("#72513a"),
+    div().absolute().left(g.zoneX + 20 * P).top(floor - 44 * P).w(4 * P).h(5 * P).bg("#3d8be0"),
+    div().absolute().left(g.zoneX + 30 * P).top(floor - 47 * P).w(5 * P).h(8 * P).bg("#e05252").border_1().border_color("#72513a"),
+    div().absolute().left(g.zoneX + 2 * P).top(112).w(84).h(24).bg(night ? "#34465a" : "#f0d99a")
+      .border_2().border_color(night ? "#7186a1" : "#76543b")
+      .child(div().absolute().left(7).top(5).w(29).h(3).bg(night ? "#dbe5f0" : "#6d4a35"))
+      .child(div().absolute().left(7).top(12).w(18).h(3).bg("#e05252"))
+      .child(div().absolute().left(29).top(12).w(24).h(3).bg("#3d8be0"))
+      .child(div().absolute().left(58).top(6).w(17).h(11).bg("#58a368")),
+    // A shallow sill under the windows carries a few quiet office objects.
+    div().absolute().left(Math.max(g.zoneX + 92, W - 210)).top(106).w(92).h(4).bg(night ? "#536273" : "#87705b"),
+    div().absolute().left(Math.max(g.zoneX + 98, W - 204)).top(93).w(8).h(13).bg("#e0b43d").border_1().border_color("#76543b"),
+    div().absolute().left(Math.max(g.zoneX + 112, W - 190)).top(98).w(10).h(8).bg("#3d8be0").border_1().border_color("#2b5f9c"),
+    div().absolute().left(Math.max(g.zoneX + 132, W - 170)).top(90).w(7).h(16).bg("#e05252").border_1().border_color("#76543b"),
+    // The lounge wall gets two larger shapes so it reads as a real room, not a backdrop.
+    ...(() => {
+      const clockX = Math.max(12, Math.min(W - 44, g.couchX + 30 * P));
+      const radiatorX = Math.max(12, Math.min(W - 108, g.couchX - 10 * P));
+      return [
+        div().absolute().left(clockX).top(116).size(30).rounded_full()
+          .bg(night ? "#39465d" : "#e6d8b8").border_2().border_color(night ? "#8495b0" : "#76543b")
+          .child(div().absolute().left(13).top(4).w(2).h(10).bg(night ? "#dbe5f0" : "#5b4634"))
+          .child(div().absolute().left(14).top(13).w(8).h(2).bg(night ? "#dbe5f0" : "#5b4634")),
+        div().absolute().left(radiatorX).top(floor - 28 * P).w(92).h(16)
+          .bg(night ? "#4a596d" : "#b56f4f").border_2().border_color(night ? "#7084a2" : "#704733"),
+        ...Array.from({ length: 7 }, (_, k) => div().absolute().left(radiatorX + 8 + k * 12).top(floor - 25 * P)
+          .w(3).h(10).bg(night ? "#71829a" : "#d08c64")),
+        div().absolute().left(radiatorX + 6).top(floor - 12 * P).w(80).h(P)
+          .bg(night ? "#30353e" : "#795638").opacity(0.32),
+      ];
+    })(),
     // Rain/blue reflection stays at the glass side; warm room lights counter it.
     ...((weather === "rain" || weather === "storm" || weather === "drizzle")
       ? [div().absolute().right(0).top(0).w(Math.max(100, W * 0.28)).h(floor).bg(night ? "#5284bd" : "#8fc7e8").opacity(night ? 0.08 : 0.045),
@@ -369,6 +435,9 @@ export function lifeProps(g, night, paperPulse) {
     div().absolute().left(g.couchX + 9 * P).top(floor - 4 * P).w(8 * P).h(P).rounded(P).bg(night ? "#8298c3" : "#e5ad78"),
     div().absolute().left(g.couchX + 10 * P).top(floor - 3 * P).w(6 * P).h(P).rounded(P).bg(night ? "#263247" : "#6b4030"),
     div().absolute().left(g.couchX + 12 * P).top(floor - 3 * P).w(3 * P).h(P).rounded(P).bg("#e0b43d"),
+    // Tiny floor marks anchor the furniture without adding another collision layer.
+    div().absolute().left(g.zoneX - 6 * P).top(floor - P).w(18 * P).h(P).bg(night ? "#4c5058" : "#8b6348").opacity(0.45),
+    div().absolute().left(g.couchX - 4 * P).top(floor - P).w(14 * P).h(P).bg(night ? "#4c5058" : "#8b6348").opacity(0.4),
   ];
 }
 
