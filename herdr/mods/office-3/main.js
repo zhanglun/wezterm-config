@@ -466,9 +466,12 @@ export default class Office extends View {
       (Math.abs(g.floorY - g.door.y) + Math.abs(counter.x - g.door.x)) / WALK_SPEED) : 0;
     const pizzaHere = party && now >= party.start + courierTrip;
 
+    // A parent waiting on live subagents stays at the desk instead of being treated as idle.
+    const delegating = new Set(here.filter((a) => descendants(all, a.address).length).map((a) => a.address));
     // Where everyone goes. Long idlers take the couch while there's room; the rest
     // gather around the cooler (or the pizza), alternating sides, further out each pair.
-    const idle = here.filter((a) => a.status === "idle").sort((a, b) => this.idleSince[a.address] - this.idleSince[b.address]);
+    const idle = here.filter((a) => a.status === "idle" && !delegating.has(a.address))
+      .sort((a, b) => this.idleSince[a.address] - this.idleSince[b.address]);
     const nappers = pizzaHere ? [] : idle.filter((a) => now - this.idleSince[a.address] > NAP_AFTER).slice(0, COUCH_SEATS);
     const activeNappers = new Set(nappers.map((a) => a.address));
     for (const address of Object.keys(this.napSlots)) {
@@ -543,7 +546,7 @@ export default class Office extends View {
         at = result.at;
         moving = !result.done;
       }
-      return { depth: at.depth ?? (p.y < g.floorY ? "back" : "front"), walking: moving, el: this.person(a, at, g, p.face, tabs[a.tab], alarmed.includes(a), moving, p.spot) };
+      return { depth: at.depth ?? (p.y < g.floorY ? "back" : "front"), walking: moving, el: this.person(a, at, g, p.face, tabs[a.tab], alarmed.includes(a), moving, p.spot, delegating.has(a.address)) };
     });
     // Back-row walkers stay behind the furniture; front-row walkers belong in
     // front of it, like the seated agents they are walking toward.
@@ -555,7 +558,7 @@ export default class Office extends View {
       const a = byDesk[i];
       if (!a) return null;
       const pos = g.deskPos(i);
-      return { back: pos.back, el: this.deskAt(i, pos, g, a, tabs[a.tab], branches[a.pane]) };
+      return { back: pos.back, el: this.deskAt(i, pos, g, a, tabs[a.tab], branches[a.pane], delegating.has(a.address)) };
     }).filter(Boolean);
     const graduatePeople = this.graduates(g, now, cx);
     const graduateBackWalking = graduatePeople.filter((p) => p.walking && p.depth === "back").map((p) => p.el);
@@ -721,9 +724,9 @@ export default class Office extends View {
 
   // A desk with its chair, monitor, bell and lamp, the branch on a sticky note, and the
   // nameplate of whoever sits there.
-  deskAt(i, pos, g, a, tab, branch) {
+  deskAt(i, pos, g, a, tab, branch, isDelegating = false) {
     const P = g.P;
-    const st = a?.status;
+    const st = isDelegating ? "working" : a?.status;
     const away = Boolean(a) && this.at[a.address]?.spot !== "desk";
     const pal = a ? { ...A.PALETTE, mug: mugOf(a) } : A.PALETTE;
     const done = st === "done" && !away;
@@ -930,7 +933,7 @@ export default class Office extends View {
       .when(!walking, (el) => el.child(this.bubble((PERSON_FRAME.height - 20) * g.P - 20, "#d94a3a").child("pizza! 🍕"))) };
   }
 
-  person(a, at, g, placeFace, tab, alarmed, moving = false, destinationSpot = at.spot) {
+  person(a, at, g, placeFace, tab, alarmed, moving = false, destinationSpot = at.spot, isDelegating = false) {
     const P = g.P;
     const spot = moving ? at.spot : destinationSpot;
     const napping = spot === "couch";
@@ -942,7 +945,7 @@ export default class Office extends View {
     const pos = this.position(at, now);
     const face = walking ? Math.sign(at.x - at.fromX) || 1 : placeFace;
     at.face = face;
-    const st = a.status;
+    const st = isDelegating ? "working" : a.status;
     const hs = away ? [A.HEADSET.stand] : [];
     let body, headTop;
     if (walking) [body, headTop] = [this.walker(pal, face, hs), 22];
