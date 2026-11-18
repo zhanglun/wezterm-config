@@ -190,6 +190,12 @@ export default class Office extends View {
       delete this.desk[k]; delete this.at[k]; delete this.routes[k]; delete this.entering[k];
       delete this.idleSince[k]; delete this.blockedSince[k]; delete this.seen[k];
     }
+    // Pack surviving agents after a departure; otherwise old high indexes leave visible gaps.
+    this.desk = Object.fromEntries(
+      Object.entries(this.desk)
+        .sort(([, a], [, b]) => a - b)
+        .map(([address], i) => [address, i]),
+    );
     const taken = new Set(Object.values(this.desk));
     for (const a of list) {
       if (a.address in this.desk) continue;
@@ -437,9 +443,13 @@ export default class Office extends View {
     const now = Date.now();
     setAgentOrder(list.map((a) => a.address));
 
+    // Ignore historical desk indexes from agents that have already left.
     const deskCount = Math.max(here.length, ...Object.values(this.desk).map((i) => i + 1));
-    const g = (this.g = this.geometry(W, H, deskCount));
+    let g = this.geometry(W, H, deskCount);
     this.seat(here, g, cx);
+    // seat() may compact indexes after a departure; redraw against the compact geometry now.
+    const packedDeskCount = Math.max(here.length, ...Object.values(this.desk).map((i) => i + 1));
+    g = (this.g = this.geometry(W, H, packedDeskCount));
     this.track(list, now, cx);
     const P = g.P;
     const byDesk = {};
@@ -542,10 +552,11 @@ export default class Office extends View {
     const backPeople = people.filter((p) => !p.walking && p.depth === "back").map((p) => p.el);
     const frontPeople = people.filter((p) => !p.walking && p.depth === "front").map((p) => p.el);
     const desks = Array.from({ length: deskCount }, (_, i) => {
-      const pos = g.deskPos(i);
       const a = byDesk[i];
-      return { back: pos.back, el: this.deskAt(i, pos, g, a, a && tabs[a.tab], a && branches[a.pane]) };
-    });
+      if (!a) return null;
+      const pos = g.deskPos(i);
+      return { back: pos.back, el: this.deskAt(i, pos, g, a, tabs[a.tab], branches[a.pane]) };
+    }).filter(Boolean);
     const graduatePeople = this.graduates(g, now, cx);
     const graduateBackWalking = graduatePeople.filter((p) => p.walking && p.depth === "back").map((p) => p.el);
     const graduateBackPeople = graduatePeople.filter((p) => !p.walking && p.depth === "back").map((p) => p.el);
