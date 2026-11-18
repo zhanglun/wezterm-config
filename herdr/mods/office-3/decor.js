@@ -1,6 +1,6 @@
 // The room's fixtures: wall pieces, the door, weather in the windows, seasonal touches.
 // Each function returns elements positioned in the scene's px.
-import { div, image } from "gpui-kit";
+import { div } from "gpui-kit";
 import { run } from "herdr";
 import * as A from "./art.js";
 import { renderPart } from "./sprite.js";
@@ -228,54 +228,6 @@ function weatherIn(kind, w, h, late, warm) {
 }
 
 // CC0 pixel weather pack (32×32 PNG). Keep native size so pixels stay crisp.
-const WX_BG = {
-  clear: "#8ecdf0", clearNight: "#16214a", partly: "#a7d4ec", partlyNight: "#1a2547",
-  clouds: "#c6d8e4", fog: "#b9c6d2", drizzle: "#a3b6c8", rain: "#7d95ad", snow: "#9fb6cc", storm: "#4c5b74",
-};
-const WX_ICONS = {
-  clear: "mods/office-3/icons/sun.png",
-  clearNight: "mods/office-3/icons/moon.png",
-  partly: "mods/office-3/icons/partly-cloudy.png",
-  clouds: "mods/office-3/icons/cloud.png",
-  fog: "mods/office-3/icons/fog.png",
-  drizzle: "mods/office-3/icons/drizzle.png",
-  rain: "mods/office-3/icons/rain.png",
-  snow: "mods/office-3/icons/snow.png",
-  storm: "mods/office-3/icons/storm.png",
-};
-
-function weatherIcon(kind, dark) {
-  const bg = dark && kind === "clear" ? WX_BG.clearNight : dark && kind === "partly" ? WX_BG.partlyNight : WX_BG[kind] ?? WX_BG.clouds;
-  const icon = kind === "clear" && dark ? WX_ICONS.clearNight : WX_ICONS[kind] ?? WX_ICONS.clouds;
-  return div().absolute().left(0).top(0).w(56).h(40).bg(bg).overflow_hidden()
-    .flex().items_center().justify_center().child(image(icon).w(32).h(32).flex_none());
-}
-
-export function weatherBoard(x, y, timeText, kind, meta, dark) {
-  const cond = { clear: "CLEAR", partly: "PARTLY", clouds: "CLOUDY", fog: "FOG", drizzle: "DRIZZLE", rain: "RAIN", snow: "SNOW", storm: "STORM" }[kind] ?? "WEATHER";
-  const temp = meta?.loading ? "LOADING" : meta?.error ? "OFFLINE" : meta?.temp == null ? "--°" : `${meta.temp}°C`;
-  const wind = meta?.loading || meta?.error ? null : meta?.wind == null ? null : `${meta.wind} km/h`;
-  const hum = meta?.hum == null ? null : `${meta.hum}%`;
-  const place = meta?.place ?? "LOCAL";
-  const panel = dark ? "#dce4e5" : "#eef2ed";
-  const ink = dark ? "#202a38" : "#1d1d24";
-  const muted = dark ? "#536273" : "#5a6b5f";
-  return div().absolute().left(x).top(y).w(150).rounded(0).overflow_hidden().border_2().border_color(dark ? "#52647a" : "#84958b")
-    .child(div().w_full().h(20).px(6).bg(dark ? "#26364a" : "#3a5a48").flex().items_center().justify_between().text_color("#eef5f0")
-      .child(div().truncate().text_size(9).font_bold().child(place))
-      .child(div().text_size(11).font_bold().child(timeText)))
-    .child(div().flex().items_center().gap(8).p(6).bg(panel)
-      .child(div().w(56).h(40).relative().overflow_hidden().rounded(0).border_1().border_color(dark ? "#8495a5" : "#b7c6bf").child(weatherIcon(kind, dark)))
-      .child(div().flex_1().flex().flex_col().gap(3)
-        .child(div().flex().items_end().gap(4)
-          .child(div().flex().items_center().gap(3)
-            .child(div().size(3).rounded_full().bg(kind === "storm" || kind === "rain" ? "#4b86c5" : "#e0b43d"))
-            .child(div().text_size(19).font_bold().text_color(ink).child(temp)))
-          .child(div().text_size(9).font_bold().text_color(muted).pb(1).child(cond)))
-        .child(div().w_full().h(1).bg(dark ? "#c2cdd1" : "#d6dfd8"))
-        .child(div().text_size(9).text_color(muted).child([wind, hum].filter(Boolean).join(" · ") || "—"))));
-}
-
 // Small architectural details that keep the short office strip from feeling flat.
 export function floorRunner(x, y, w) {
   return div().absolute().left(x).top(y).w(w).h(14).rounded(3).bg("#624735")
@@ -491,49 +443,6 @@ export function whiteboard(x, y, rows) {
           .child(div().text_color("#35434a").child(label)))
         .child(div().w(16).text_color("#465862").text_size(10).child(String(count))))))
     .child(div().h(3).rounded(1).bg("#c8d1cd"));
-}
-
-// "DAYS CLEAR" resets to a blinking 0 while someone is blocked.
-export function incidentSign(x, y, h, days, now) {
-  const height = Math.min(h, 74);
-  const paper = now ? "#e7b84b" : "#f0cf61";
-  const ink = now ? "#5d2524" : "#3b2a1a";
-  const pixel = (left, top, width, height, color) =>
-    div().absolute().left(left).top(top).w(width).h(height).bg(color);
-  const texture = Array.from({ length: 24 }, (_, k) =>
-    pixel(8 + (k % 6) * 16, 26 + Math.floor(k / 6) * 7, k % 2 ? 3 : 5, 2, k % 3 ? "#d4a943" : "#f6dc73"));
-  return div().absolute().left(x).top(y).w(112).h(height).overflow_hidden()
-    .bg(paper).border_2().border_color("#3b2a1a").text_color(ink)
-    .child(div().absolute().left(0).top(0).size_full().opacity(0.55).children(texture))
-    .child(pixel(3, 3, 6, 2, "#fff0a3"))
-    .child(pixel(103, 3, 6, 2, "#8a6420"))
-    .child(pixel(3, height - 5, 6, 2, "#8a6420"))
-    .child(pixel(103, height - 5, 6, 2, "#fff0a3"))
-    .child(div().absolute().left(8).top(7).w(96).h(17).bg("#e1b84d").border_1().border_color("#8a6420")
-      .flex().items_center().justify_center().text_size(10).font_bold().child("DAYS CLEAR"))
-    .child(div().absolute().left(20).top(28).w(72).h(27).bg("#20252a").border_2().border_color("#6f5b2d")
-      .flex().items_center().justify_center().text_size(22).font_bold().text_color(now ? "#ff6b62" : "#9dff9a")
-      .child(String(now ? 0 : days)).when(now, (el) => el.loop("opacity", { from: 0.35, to: 1, period: 600 })))
-    .child(pixel(24, 32, 3, 3, "#59633d"))
-    .child(pixel(85, 32, 3, 3, "#59633d"))
-    .child(div().absolute().left(8).top(height - 16).w(96).h(10).flex().items_center().justify_center()
-      .text_size(8).font_bold().text_color("#5c4a1b").child("BLOCKED RESETS"));
-}
-
-// A small wall calendar gives the glass wall a lived-in office detail.
-export function wallCalendar(x, y, date, night) {
-  const month = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][date.getMonth()];
-  const paper = night ? "#d9dfdf" : "#fbf8f1";
-  const ink = night ? "#39465d" : "#3b3b44";
-  return div().absolute().left(x).top(y).w(70).h(66).p(4).bg("#a86f4d").border_2().border_color("#694936").rounded(2)
-    .child(div().absolute().left(27).top(-5).w(16).h(8).rounded(1).bg("#d7b85f"))
-    .child(div().size_full().bg(paper).border_1().border_color("#9aa2ab").flex().flex_col().items_center()
-      .child(div().w_full().h(14).bg("#e05252").text_size(9).font_bold().text_color("#fffaf0").flex().items_center().justify_center().child(month))
-      .child(div().absolute().left(0).top(14).w(1).h(38).bg("#d8dfe2"))
-      .child(div().absolute().right(0).top(14).w(1).h(38).bg("#c6ced2"))
-      .child(div().flex().items_center().justify_center().text_size(25).font_bold().text_color(ink).child(String(date.getDate())))
-      .child(div().w(38).h(1).bg("#d8dee1"))
-      .child(div().flex().gap(3).children([0, 1, 2, 3].map((k) => div().size(4).rounded_full().bg(["#3d8be0", "#58a368", "#e0b43d", "#9b6bdc"][k])))));
 }
 
 // A framed head-and-shoulders of the busiest agent.

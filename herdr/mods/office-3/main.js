@@ -25,7 +25,6 @@ const PARTY_FINISHES = 3, PARTY_WINDOW = 5 * 60 * 1000, PARTY_LENGTH = 8 * 60 * 
 const GRAD_BOW = 2500;
 const COUCH_SEATS = 3;
 const FRONT_ROW = 6;
-const DAY = 86400000;
 const CHAT = ["…", "☕", "lgtm", "standup?", "🍩", "ship it", "nice", "brb", "tabs > spaces", "🎉", "coffee?", "hmm"];
 const PIZZA_CHAT = ["🍕", "nom", "pizza!", "🍕", "best day", "nom nom"];
 const CODE = ["#7fd1b9", "#f2b866", "#9aa8ff", "#e88fb0"];
@@ -79,22 +78,23 @@ function season(d) {
 }
 
 const rotate = (list, n) => list.map((_, i) => list[(i + n) % list.length]);
-const clock = (d) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
 const remote = (address) => address.includes("/");
 const mugOf = (a) => {
   const names = `${a.program?.key ?? ""} ${a.app ?? ""}`;
   return Object.entries(A.MUGS).find(([k]) => names.includes(k))?.[1] ?? A.PALETTE.mug;
 };
-// Live sub-agents under `addr`, however deep.
-const descendants = (all, addr) =>
-  all.filter((k) => k.parent === addr && k.state === "live").flatMap((k) => [k, ...descendants(all, k.address)]);
-
-function loadNumber(key) {
-  try { return Number(localStorage.getItem(key)) || null; } catch { return null; }
-}
-function saveNumber(key, n) {
-  try { localStorage.setItem(key, String(n)); } catch {}
-}
+// Live sub-agents under `addr`, however deep. Terminal addresses may carry a machine prefix.
+const addressOf = (value) => typeof value === "string" ? value : value?.address;
+const sameAddress = (a, b) => {
+  a = addressOf(a); b = addressOf(b);
+  return a === b || (a && b && a.split("/").at(-1) === b.split("/").at(-1));
+};
+const descendants = (all, addr, seen = new Set()) => all
+  .filter((k) => !seen.has(k.address) && sameAddress(k.parent, addr))
+  .flatMap((k) => descendants(all, k.address, new Set([...seen, k.address])).length
+    ? [k, ...descendants(all, k.address, new Set([...seen, k.address]))] : [k]);
+const hasRunningSubagent = (terminal) => Object.values(terminal?.records ?? {})
+  .some((record) => record?.state === "working" || record?.status === "working");
 
 export default class Office extends View {
   init(_props, cx) {
@@ -114,14 +114,13 @@ export default class Office extends View {
     this.kids = {}; // intern address -> { x, y, p, pal } where it sat last render
     this.grads = {}; // intern address -> { x, y, p, pal, start }
     this.away = [];
+    this.delegatingUntil = {};
     this.hovered = null;
     this.weather = null;
     this.weatherMeta = { loading: true };
     this.started = false;
     this.cat = { goal: "sit", desk: null, since: Date.now(), phase: "floor" };
     this.now = new Date();
-    this.incident = loadNumber("office.incident") ?? Date.now();
-    saveNumber("office.incident", this.incident);
     cx.timer.every(30000, (cx) => { this.now = new Date(); cx.notify(); });
     cx.timer.every(9000, (cx) => { if (this.wanderCat()) cx.notify(); });
     if (WEATHER) {
@@ -224,10 +223,6 @@ export default class Office extends View {
       this.party = { start: now };
       this.finishes = [];
       cx.timer.after(PARTY_LENGTH + 50, (cx) => { this.party = null; cx.notify(); });
-    }
-    if (list.some((a) => a.status === "blocked") && now - this.incident > 60000) {
-      this.incident = now;
-      saveNumber("office.incident", now);
     }
   }
 
@@ -466,8 +461,16 @@ export default class Office extends View {
       (Math.abs(g.floorY - g.door.y) + Math.abs(counter.x - g.door.x)) / WALK_SPEED) : 0;
     const pizzaHere = party && now >= party.start + courierTrip;
 
-    // A parent waiting on live subagents stays at the desk instead of being treated as idle.
-    const delegating = new Set(here.filter((a) => descendants(all, a.address).length).map((a) => a.address));
+    // Keep a parent at the desk through brief core refreshes while a subagent is live.
+    const delegatingNow = new Set(here.filter((a) => {
+      const terminal = all.find((t) => sameAddress(t.address, a.address));
+      return descendants(all, a.address).length || hasRunningSubagent(terminal);
+    }).map((a) => a.address));
+    for (const address of delegatingNow) this.delegatingUntil[address] = now + 5000;
+    for (const address of Object.keys(this.delegatingUntil)) {
+      if (!here.some((a) => a.address === address) || this.delegatingUntil[address] <= now) delete this.delegatingUntil[address];
+    }
+    const delegating = new Set(Object.keys(this.delegatingUntil));
     // Where everyone goes. Long idlers take the couch while there's room; the rest
     // gather around the cooler (or the pizza), alternating sides, further out each pair.
     const idle = here.filter((a) => a.status === "idle" && !delegating.has(a.address))
@@ -657,38 +660,16 @@ export default class Office extends View {
       address: a.address, pane: a.pane, pal: A.look(a.address), machine: a.address.split("/")[0],
       name: a.space_name, status: a.status, title: a.title || a.tab_name || a.space_name,
     }));
-    const blockedNow = list.some((a) => a.status === "blocked");
     const wbW = 150;
-    // Keep wall boards anchored to the room, not to the number of desk slots below.
-    const boardGap = 14;
-    const signW = 112, calendarW = 70, weatherW = 150;
-    const boardRowW = signW + calendarW + weatherW + wbW + boardGap * 3;
-    const preferredSignX = g.doorX + 16 * P + 32;
-    const preferredCalendarX = Math.round(W * 0.36) - 35;
-    const preferredWeatherX = Math.round(W * 0.55);
-    const preferredStatusX = Math.min(Math.round(W * 0.67), W - wbW - 16);
-    // Leave enough room for the fixed wall cards before switching to the compact row.
-    const compactBoards = W < 760;
-    const ultraCompactBoards = W < 390;
-    const boardStart = Math.max(8, Math.min(preferredSignX, W - boardRowW - 8));
-    const signX = compactBoards ? boardStart : preferredSignX;
-    const calendarX = compactBoards ? signX + signW + boardGap : Math.max(preferredCalendarX, signX + signW + boardGap);
-    const wx = ultraCompactBoards ? 8 : compactBoards ? calendarX + calendarW + boardGap : Math.max(preferredWeatherX, calendarX + calendarW + boardGap);
-    const wbX = Math.max(preferredStatusX, wx + weatherW + boardGap);
     const topY = 10;
-    const weatherY = ultraCompactBoards ? 92 : topY;
-    const signH = Math.min(74, Math.max(48, wallBottom - 22));
-    els.push(D.incidentSign(signX, topY, signH, Math.floor((now - this.incident) / DAY), blockedNow));
-    if (!ultraCompactBoards) els.push(D.wallCalendar(calendarX, topY, this.now, lightsDown(this.now.getHours(), this.weatherMeta)));
-    if (remotes.length) {
-      const vidX = Math.max(60, wx - 176);
-      if (!compactBoards) {
-        const vidY = vidX < calendarX + 85 ? Math.max(8, Math.min(98, wallBottom - 88)) : topY;
-        els.push(D.videoWall(vidX, vidY, Math.min(signH + 4, wallBottom - vidY - 4), remotes));
-      }
+    const compactBoards = W < 760;
+    // Use the open upper-middle window bay; the far right is occupied by lounge props.
+    const wbX = Math.max(8, Math.min(Math.round(W * 0.58), W - wbW - 16));
+    if (remotes.length && !compactBoards) {
+      const vidX = Math.max(60, wbX - 176);
+      els.push(D.videoWall(vidX, topY, Math.min(78, wallBottom - topY - 4), remotes));
     }
     els.push(D.door(g.doorX, wallBottom, P, now < (this.doorUntil ?? 0)));
-    els.push(D.weatherBoard(wx, weatherY, clock(this.now), this.weather, this.weatherMeta, lightsDown(this.now.getHours(), this.weatherMeta)));
     const count = (st) => list.filter((a) => a.status === st).length;
     const napping = list.filter((a) => this.at[a.address]?.spot === "couch").length;
     const interns = list.reduce((n, a) => n + descendants(all, a.address).length, 0);
